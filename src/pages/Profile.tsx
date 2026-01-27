@@ -7,6 +7,7 @@ import { userApi, telegramApi } from '../api/client';
 import PayModal from '../components/PayModal';
 import PromoModal from '../components/PromoModal';
 import ConfirmModal from '../components/ConfirmModal';
+import PasskeySettings from '../components/PasskeySettings';
 import { useStore } from '../store/useStore';
 
 interface UserProfile {
@@ -455,6 +456,8 @@ export default function Profile() {
           )}
         </Group>
       </Card>
+
+      <PasskeySettings />
 
       <Card withBorder radius="md" p="lg">
         <Text fw={500} mb="md">{t('profile.security')}</Text>

@@ -201,5 +201,31 @@
     "withdrawDate": "Withdrawal date",
     "endDate": "End date",
     "total": "Total"
+  },
+  "passkey": {
+    "title": "Passkey",
+    "description": "Passkey allows you to sign in using fingerprint, Face ID, or device PIN",
+    "enabled": "Enabled",
+    "add": "Add",
+    "noPasskeys": "You don't have any registered Passkeys",
+    "createdAt": "Added",
+    "name": "Name",
+    "rename": "Rename",
+    "renameTitle": "Rename Passkey",
+    "renameSuccess": "Passkey renamed",
+    "renameError": "Failed to rename Passkey",
+    "deleteTitle": "Delete Passkey",
+    "deleteConfirm": "Are you sure you want to delete Passkey \"{{name}}\"?",
+    "deleteSuccess": "Passkey deleted",
+    "deleteError": "Failed to delete Passkey",
+    "registerSuccess": "Passkey registered successfully",
+    "registerError": "Failed to register Passkey",
+    "alreadyRegistered": "Passkey already registered. Delete it from your device password settings",
+    "cancelled": "Registration cancelled",
+    "notSupported": "Your browser does not support Passkey",
+    "notConfigured": "Passkey is not configured for this account",
+    "loginWithPasskey": "Sign in with Passkey",
+    "enterLogin": "Enter your login",
+    "authError": "Failed to sign in with Passkey"
   }
 }

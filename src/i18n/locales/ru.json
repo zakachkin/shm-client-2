@@ -201,5 +201,31 @@
     "withdrawDate": "Дата списания",
     "endDate": "Дата окончания",
     "total": "Итого"
+  },
+  "passkey": {
+    "title": "Passkey",
+    "description": "Passkey позволяет входить в аккаунт с помощью отпечатка пальца, Face ID или PIN-кода устройства",
+    "enabled": "Включено",
+    "add": "Добавить",
+    "noPasskeys": "У вас нет зарегистрированных Passkey",
+    "createdAt": "Добавлен",
+    "name": "Название",
+    "rename": "Переименовать",
+    "renameTitle": "Переименовать Passkey",
+    "renameSuccess": "Passkey переименован",
+    "renameError": "Не удалось переименовать Passkey",
+    "deleteTitle": "Удалить Passkey",
+    "deleteConfirm": "Вы уверены, что хотите удалить Passkey \"{{name}}\"?",
+    "deleteSuccess": "Passkey удалён",
+    "deleteError": "Не удалось удалить Passkey",
+    "registerSuccess": "Passkey успешно зарегистрирован",
+    "registerError": "Не удалось зарегистрировать Passkey",
+    "alreadyRegistered": "Passkey уже зарегистрирован. Удалите его из настроек паролей вашего устройства",
+    "cancelled": "Регистрация отменена",
+    "notSupported": "Ваш браузер не поддерживает Passkey",
+    "notConfigured": "Passkey не настроен для этого аккаунта",
+    "loginWithPasskey": "Войти с Passkey",
+    "enterLogin": "Введите логин",
+    "authError": "Не удалось войти через Passkey"
   }
 }

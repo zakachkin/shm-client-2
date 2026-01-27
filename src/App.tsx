@@ -5,18 +5,17 @@ import { MantineProvider, createTheme, AppShell, Burger, Group, Text, NavLink, A
 import { Notifications } from '@mantine/notifications';
 import { useDisclosure } from '@mantine/hooks';
 import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
-import { IconServer, IconCreditCard, IconSun, IconMoon, IconUser, IconLogout, IconReceipt } from '@tabler/icons-react';
+import { IconSun, IconMoon, IconLogout } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useStore } from './store/useStore';
+import { NAV_ITEMS } from './constants/navigation';
 import { auth } from './api/client';
 import { getCookie, removeCookie, parseAndSavePartnerId } from './api/cookie';
 import { config } from './config';
 import LanguageSwitcher from './components/LanguageSwitcher';
 
-// Parse partner_id from URL on app load
 parseAndSavePartnerId();
 
-// Pages
 import Services from './pages/Services';
 import Payments from './pages/Payments';
 import Withdrawals from './pages/Withdrawals';
@@ -24,7 +23,7 @@ import Profile from './pages/Profile';
 import Login from './pages/Login';
 
 const theme = createTheme({
-  primaryColor: 'blue',
+  primaryColor: 'cyan',
   fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
   defaultRadius: 'md',
   colors: {
@@ -111,25 +110,8 @@ function WebAppHeader() {
 function BottomNavigation() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { menuItems } = useStore();
   const computedColorScheme = useComputedColorScheme('light');
   const { t } = useTranslation();
-
-  const iconMap: Record<string, React.ReactNode> = {
-    '/': <IconUser size={20} />,
-    '/services': <IconServer size={20} />,
-    '/payments': <IconCreditCard size={20} />,
-    '/withdrawals': <IconReceipt size={20} />,
-  };
-
-  const labelMap: Record<string, string> = {
-    '/': t('nav.home'),
-    '/services': t('nav.services'),
-    '/payments': t('nav.payments'),
-    '/withdrawals': t('nav.withdrawals'),
-  };
-
-  const enabledItems = menuItems.filter(item => item.enabled);
 
   return (
     <Box
@@ -160,9 +142,9 @@ function BottomNavigation() {
         }}
       >
         <Group justify="space-around" gap={4}>
-          {enabledItems.map((item) => {
-            const isActive = location.pathname === item.path ||
-              (item.path === '/' && location.pathname === '/');
+          {NAV_ITEMS.map((item) => {
+            const isActive = location.pathname === item.path;
+            const Icon = item.icon;
             return (
               <Box
                 key={item.path}
@@ -182,8 +164,8 @@ function BottomNavigation() {
                   transition: 'all 0.2s ease',
                 }}
               >
-                {iconMap[item.path]}
-                <Text size="xs" mt={4} fw={isActive ? 600 : 400}>{labelMap[item.path]}</Text>
+                <Icon size={20} />
+                <Text size="xs" mt={4} fw={isActive ? 600 : 400}>{t(item.labelKey)}</Text>
               </Box>
             );
           })}
@@ -197,7 +179,7 @@ function AppContent() {
   const [opened, { toggle, close }] = useDisclosure();
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, menuItems, themeConfig, isAuthenticated, isLoading, setUser, setIsLoading, logout } = useStore();
+  const { user, isAuthenticated, isLoading, setUser, setIsLoading, logout } = useStore();
   const [isTelegramWebApp] = useState(isInsideTelegramWebApp);
   const { t } = useTranslation();
 
@@ -269,20 +251,6 @@ function AppContent() {
     checkAuth();
   }, [setUser, setIsLoading]);
 
-  const iconMap: Record<string, React.ReactNode> = {
-    '/': <IconUser size={16} />,
-    '/services': <IconServer size={16} />,
-    '/payments': <IconCreditCard size={16} />,
-    '/withdrawals': <IconReceipt size={16} />,
-  };
-
-  const labelMap: Record<string, string> = {
-    '/': t('nav.home'),
-    '/services': t('nav.services'),
-    '/payments': t('nav.payments'),
-    '/withdrawals': t('nav.withdrawals'),
-  };
-
   // Show loading spinner while checking auth
   if (isLoading) {
     return (
@@ -340,7 +308,7 @@ function AppContent() {
           <Group>
             <Text size="sm" style={{ cursor: 'pointer' }} onClick={() => navigate('/')}>{user?.login}</Text>
             <LanguageSwitcher />
-            {themeConfig.allowUserThemeChange && <ThemeToggle />}
+            <ThemeToggle />
             <ActionIcon
               onClick={logout}
               variant="default"
@@ -355,19 +323,22 @@ function AppContent() {
 
       <AppShell.Navbar p="md">
         <AppShell.Section grow>
-          {menuItems.filter(item => item.enabled).map((item) => (
-            <NavLink
-              key={item.path}
-              component={Link}
-              to={item.path}
-              label={labelMap[item.path]}
-              leftSection={iconMap[item.path]}
-              active={location.pathname === item.path}
-              variant="light"
-              style={{ borderRadius: 8, marginBottom: 4 }}
-              onClick={close}
-            />
-          ))}
+          {NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            return (
+              <NavLink
+                key={item.path}
+                component={Link}
+                to={item.path}
+                label={t(item.labelKey)}
+                leftSection={<Icon size={16} />}
+                active={location.pathname === item.path}
+                variant="light"
+                style={{ borderRadius: 8, marginBottom: 4 }}
+                onClick={close}
+              />
+            );
+          })}
         </AppShell.Section>
       </AppShell.Navbar>
 

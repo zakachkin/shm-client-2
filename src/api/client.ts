@@ -132,3 +132,66 @@ export const promoApi = {
   apply: (code: string) => api.get(`/promo/apply/${code}`),
   list: () => api.get('/promo'),
 };
+
+// Passkey API
+export interface PasskeyCredential {
+  id: string;
+  name: string;
+  created_at: string;
+}
+
+export interface PasskeyRegisterOptions {
+  challenge: string;
+  rp: {
+    name: string;
+    id: string;
+  };
+  user: {
+    id: string;
+    name: string;
+    displayName: string;
+  };
+  pubKeyCredParams: Array<{ type: string; alg: number }>;
+  timeout: number;
+  attestation: string;
+  excludeCredentials: Array<{ id: string; type: string }>;
+  authenticatorSelection: {
+    authenticatorAttachment: string;
+    residentKey: string;
+    userVerification: string;
+  };
+}
+
+export interface PasskeyAuthOptions {
+  challenge: string;
+  timeout: number;
+  rpId: string;
+  userVerification: string;
+}
+
+export const passkeyApi = {
+  list: () => api.get<{ data: { credentials: PasskeyCredential[]; enabled: boolean } }>('/user/passkey/list'),
+  registerOptions: () => api.post<{ data: PasskeyRegisterOptions }>('/user/passkey/register/options'),
+  registerComplete: (data: {
+    credential_id: string;
+    rawId: string;
+    response: {
+      clientDataJSON: string;
+      attestationObject: string;
+    };
+    name?: string;
+  }) => api.post('/user/passkey/register/complete', data),
+  delete: (credentialId: string) => api.post('/user/passkey/delete', { credential_id: credentialId }),
+  rename: (credentialId: string, name: string) => api.post('/user/passkey/rename', { credential_id: credentialId, name }),
+  authOptionsPublic: () => api.post<{ data: PasskeyAuthOptions }>('/user/passkey/auth/options/public', {}),
+  authPublic: (data: {
+    credential_id: string;
+    rawId: string;
+    response: {
+      clientDataJSON: string;
+      authenticatorData: string;
+      signature: string;
+      userHandle?: string;
+    };
+  }) => api.post<{ data: { id: string } }>('/user/passkey/auth/public', data),
+};
