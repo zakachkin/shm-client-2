@@ -93,7 +93,7 @@
     "methods": "методов",
     "autopaymentEnabled": "Автоплатёж включён",
     "user": "Пользователь",
-    "telegramDescription": "Привязка Telegram позволит получать уведомления о статусе услуг и платежей."
+    "telegramDescription": "Привязка Telegram позволит получать уведомления о статусе услуг и платежей, так же оплачивать услуги Телеграмм звездами."
   },
   "services": {
     "title": "Мои услуги",
@@ -166,6 +166,7 @@
     "autopaymentDeleted": "Автоплатёж удалён",
     "autopaymentDeleteError": "Не удалось удалить автоплатёж",
     "paymentSuccess": "Платёж проведён успешно",
+    "internalPaymentSuccess": "Запрос на оплату выполнен",
     "paymentError": "Ошибка при проведении платежа"
   },
   "order": {

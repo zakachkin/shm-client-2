@@ -93,7 +93,7 @@
     "methods": "methods",
     "autopaymentEnabled": "Auto-payment enabled",
     "user": "User",
-    "telegramDescription": "Linking Telegram will allow you to receive notifications about the status of services and payments."
+    "telegramDescription": "Linking Telegram will allow you to receive notifications about the status of services and payments, as well as pay for Telegram services with stars."
   },
   "services": {
     "title": "My Services",
@@ -166,6 +166,7 @@
     "autopaymentDeleted": "Auto-payment deleted",
     "autopaymentDeleteError": "Failed to delete autopayment",
     "paymentSuccess": "Payment completed successfully",
+    "internalPaymentSuccess": "Payment request completed",
     "paymentError": "Payment failed"
   },
   "order": {

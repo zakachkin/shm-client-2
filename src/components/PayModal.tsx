@@ -13,6 +13,7 @@ interface PaySystem {
   allow_deletion: number;
   recurring: number;
   internal?: number;
+  weight?: number;
 }
 
 interface PayModalProps {
@@ -39,11 +40,13 @@ export default function PayModal({ opened, onClose }: PayModalProps) {
       const response = await userApi.getPaySystems();
       const rawData = response.data.data || [];
       const seen = new Set<string>();
-      const data = rawData.filter((ps: PaySystem) => {
-        if (seen.has(ps.paysystem)) return false;
-        seen.add(ps.paysystem);
-        return true;
-      });
+      const data = rawData
+        .filter((ps: PaySystem) => {
+          if (seen.has(ps.paysystem)) return false;
+          seen.add(ps.paysystem);
+          return true;
+        })
+        .sort((a: PaySystem, b: PaySystem) => (b.weight || 0) - (a.weight || 0));
       setPaySystems(data);
       if (data.length > 0) {
         setSelectedPaySystem(data[0].paysystem);
