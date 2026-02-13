@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Card, Text, Stack, Button, TextInput, PasswordInput, Divider, Title, Center, Modal, Group } from '@mantine/core';
 import { IconLogin, IconUserPlus, IconFingerprint, IconShieldLock, IconBrandTelegram } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
@@ -42,9 +42,21 @@ export default function Login() {
   const { t } = useTranslation();
   const isWebAuthnSupported = !!window.PublicKeyCredential;
   const { isInsideTelegramWebApp, telegramWebApp } = useTelegramWebApp();
+  const autoAuthTriggeredRef = useRef(false);
 
   const hasTelegramWidget = !isInsideTelegramWebApp && !!config.TELEGRAM_BOT_NAME && config.TELEGRAM_BOT_AUTH_ENABLE === 'true';
   const hasTelegramWebAppAuth = isInsideTelegramWebApp && config.TELEGRAM_WEBAPP_AUTH_ENABLE === 'true';
+  const hasTelegramWebAppAutoAuth = hasTelegramWebAppAuth && config.TELEGRAM_WEBAPP_AUTO_AUTH_ENABLE === 'true';
+
+  useEffect(() => {
+    if (!hasTelegramWebAppAutoAuth || autoAuthTriggeredRef.current || !telegramWebApp?.initData) {
+      return;
+    }
+
+    autoAuthTriggeredRef.current = true;
+    setShowLoginForm(false);
+    void handleTelegramWebAppAuth();
+  }, [hasTelegramWebAppAutoAuth, telegramWebApp?.initData]);
 
   const handleLogin = async (otpTokenParam?: string) => {
     if (!formData.login || !formData.password) {

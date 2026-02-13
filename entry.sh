@@ -1,16 +1,35 @@
 #!/bin/sh
 
-FASTCGI_SERVER=""
-if [ ! -z "$SHM_HOST" ]; then
-    FASTCGI_SERVER="${SHM_HOST#http://}"
-    FASTCGI_SERVER="${FASTCGI_SERVER#https://}"
-elif [ ! -z "$SHM_URL" ]; then
-    FASTCGI_SERVER="${SHM_URL#http://}"
-    FASTCGI_SERVER="${FASTCGI_SERVER#https://}"
-fi
+API_MODE="${API:-http}"
 
-if [ ! -z "$FASTCGI_SERVER" ]; then
-    sed -i "s|#SERVER|$FASTCGI_SERVER|" /etc/nginx/conf.d/default.conf
+if [ "$API_MODE" = "fastcgi" ]; then
+    cp /etc/nginx/conf.d/fastcgi.conf /etc/nginx/conf.d/default.conf
+
+    FASTCGI_SERVER=""
+    if [ ! -z "$SHM_HOST" ]; then
+        FASTCGI_SERVER="${SHM_HOST#http://}"
+        FASTCGI_SERVER="${FASTCGI_SERVER#https://}"
+    elif [ ! -z "$SHM_URL" ]; then
+        FASTCGI_SERVER="${SHM_URL#http://}"
+        FASTCGI_SERVER="${FASTCGI_SERVER#https://}"
+    fi
+
+    if [ ! -z "$FASTCGI_SERVER" ]; then
+        sed -i "s|#SERVER|$FASTCGI_SERVER|" /etc/nginx/conf.d/default.conf
+    fi
+else
+    cp /etc/nginx/conf.d/http.conf /etc/nginx/conf.d/default.conf
+
+    PROXY_URL=""
+    if [ ! -z "$SHM_URL" ]; then
+        PROXY_URL="$SHM_URL"
+    elif [ ! -z "$SHM_HOST" ]; then
+        PROXY_URL="$SHM_HOST"
+    fi
+
+    if [ ! -z "$PROXY_URL" ]; then
+        sed -i "s|#SHM_URL|$PROXY_URL|" /etc/nginx/conf.d/default.conf
+    fi
 fi
 
 if [ ! -z "$SHM_BASE_PATH" ] && [ "$SHM_BASE_PATH" != "/" ]; then
@@ -20,6 +39,7 @@ if [ ! -z "$SHM_BASE_PATH" ] && [ "$SHM_BASE_PATH" != "/" ]; then
     mv /app/favicon.* "/app${SHM_BASE_PATH}/" 2>/dev/null || true
 
     sed -i "s|location / {|location $SHM_BASE_PATH/ {\n        alias /app${SHM_BASE_PATH}/;\n        try_files \$uri \$uri/ ${SHM_BASE_PATH}/index.html;\n    }\n\n    location / {|" /etc/nginx/conf.d/default.conf
+    sed -i "s|#proxy_cookie_path;|proxy_cookie_path / $SHM_BASE_PATH;|" /etc/nginx/conf.d/default.conf
 fi
 
 CONFIG_PATH="/app"
