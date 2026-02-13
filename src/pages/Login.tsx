@@ -43,6 +43,8 @@ export default function Login() {
   const isWebAuthnSupported = !!window.PublicKeyCredential;
   const { isInsideTelegramWebApp, telegramWebApp } = useTelegramWebApp();
   const autoAuthTriggeredRef = useRef(false);
+  const autoAuthAttemptKey = 'tg_webapp_auto_auth_attempted';
+  const autoAuthCooldownMs = 60 * 1000;
 
   const hasTelegramWidget = !isInsideTelegramWebApp && !!config.TELEGRAM_BOT_NAME && config.TELEGRAM_BOT_AUTH_ENABLE === 'true';
   const hasTelegramWebAppAuth = isInsideTelegramWebApp && config.TELEGRAM_WEBAPP_AUTH_ENABLE === 'true';
@@ -53,7 +55,13 @@ export default function Login() {
       return;
     }
 
+    const lastAttempt = Number(sessionStorage.getItem(autoAuthAttemptKey) || 0);
+    if (lastAttempt && Date.now() - lastAttempt < autoAuthCooldownMs) {
+      return;
+    }
+
     autoAuthTriggeredRef.current = true;
+    sessionStorage.setItem(autoAuthAttemptKey, String(Date.now()));
     setShowLoginForm(false);
     void handleTelegramWebAppAuth();
   }, [hasTelegramWebAppAutoAuth, telegramWebApp?.initData]);
@@ -158,6 +166,7 @@ export default function Login() {
   const handleTelegramWebAppAuth = async () => {
     if (!telegramWebApp?.initData) {
       notifications.show({ title: t('common.error'), message: t('auth.telegramAuthError'), color: 'red' });
+      setShowLoginForm(true);
       return;
     }
 
@@ -178,6 +187,7 @@ export default function Login() {
       notifications.show({ title: t('common.success'), message: t('auth.telegramAuth'), color: 'green' });
     } catch {
       notifications.show({ title: t('common.error'), message: t('auth.telegramAuthError'), color: 'red' });
+      setShowLoginForm(true);
     } finally {
       setLoading(false);
     }
