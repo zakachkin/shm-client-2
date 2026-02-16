@@ -1,9 +1,9 @@
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
 import { useEffect } from 'react';
-import { MantineProvider, createTheme, AppShell, Group, Burger, Text, NavLink, ActionIcon, useMantineColorScheme, useComputedColorScheme, Center, Loader, Box } from '@mantine/core';
+import { MantineProvider, createTheme, AppShell, Group, Text, ActionIcon, useMantineColorScheme, useComputedColorScheme, Center, Loader, Box, Button } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
-import { useDisclosure, useMediaQuery } from '@mantine/hooks';
+import { useMediaQuery } from '@mantine/hooks';
 import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { IconSun, IconMoon, IconLogout, IconHeadset } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
@@ -189,7 +189,6 @@ function BottomNavigation() {
 }
 
 function AppContent() {
-  const [opened, { toggle, close }] = useDisclosure();
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated, isLoading, setUser, setIsLoading, logout } = useStore();
@@ -300,20 +299,32 @@ function AppContent() {
     );
   }
 
+  const appShellMaxWidth = 1200;
+  const appShellOffset = `max(0px, calc(50% - ${appShellMaxWidth / 2}px))`;
+
   return (
     <AppShell
       header={{ height: 60 }}
-      navbar={{ width: 280, breakpoint: 'sm', collapsed: { mobile: !opened } }}
       padding="md"
+      styles={{
+        header: {
+          left: appShellOffset,
+          right: appShellOffset,
+          borderBottom: 0,
+          opacity: 100,
+        },
+        main: {
+          paddingLeft: `calc(var(--app-shell-padding) + var(--app-shell-navbar-offset, 0px) + ${appShellOffset})`,
+          paddingRight: `calc(var(--app-shell-padding) + ${appShellOffset})`,
+        },
+      }}
     >
       <AppShell.Header>
-        <Group h="100%" px="md" justify="space-between">
+        <Group h="100%" px="md" justify="space-between" wrap="nowrap">
           <Group>
-            <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
             <Text
               size="lg"
               fw={700}
-              c="blue"
               onClick={() => navigate('/')}
               style={{ cursor: 'pointer' }}
               visibleFrom={config.APP_NAME.length > 10 ? 'sm' : undefined}
@@ -321,15 +332,34 @@ function AppContent() {
               {config.APP_NAME}
             </Text>
           </Group>
+          <Group gap="xs" visibleFrom="sm" wrap="nowrap">
+            {NAV_ITEMS.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.path;
+              return (
+                <Button
+                  key={item.path}
+                  component={Link}
+                  to={item.path}
+                  leftSection={<Icon size={16} />}
+                  variant={isActive ? 'light' : 'subtle'}
+                  size="xs"
+                  radius="md"
+                >
+                  {t(item.labelKey)}
+                </Button>
+              );
+            })}
+          </Group>
           <Group>
             <Text size="sm" style={{ cursor: 'pointer' }} onClick={() => navigate('/')}>{user?.login}</Text>
-          { config.SUPPORT_LINK &&  <ActionIcon
+            { config.SUPPORT_LINK &&  <ActionIcon
               onClick={handleSupportLink}
               variant="subtle"
               size="lg"
               color="blue"
             >
-              <IconHeadset size={20} />
+            <IconHeadset size={20} />
             </ActionIcon> }
             <LanguageSwitcher />
             <ThemeToggle />
@@ -346,41 +376,6 @@ function AppContent() {
           </Group>
         </Group>
       </AppShell.Header>
-
-      <AppShell.Navbar p="md">
-        <AppShell.Section grow>
-          {NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.path}
-                component={Link}
-                to={item.path}
-                label={t(item.labelKey)}
-                leftSection={<Icon size={16} />}
-                active={location.pathname === item.path}
-                variant="light"
-                style={{ borderRadius: 8, marginBottom: 4 }}
-                onClick={close}
-              />
-            );
-          })}
-        </AppShell.Section>
-        <AppShell.Section>
-          <Center py="md">
-            <Text
-              component="a"
-              href="https://myshm.ru"
-              target="_blank"
-              size="sm"
-              c="dimmed"
-              style={{ textDecoration: 'none' }}
-            >
-              Powered by MySHM.ru
-            </Text>
-          </Center>
-        </AppShell.Section>
-      </AppShell.Navbar>
 
       <AppShell.Main>
         <Routes>
