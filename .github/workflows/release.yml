@@ -87,7 +87,7 @@ jobs:
         context: .
         platforms: linux/amd64,linux/arm64
         push: true
-        target: client-2
+        target: client
         tags: |
           ${{ env.IMAGE_NAME }}-client-2:${{ steps.version.outputs.tag }}
           ${{ steps.version.outputs.push_latest == 'true' && format('{0}-client-2:{1}', env.IMAGE_NAME, steps.version.outputs.minor) || format('{0}-client-2:skip-minor-{1}', env.IMAGE_NAME, steps.version.outputs.rev) }}
