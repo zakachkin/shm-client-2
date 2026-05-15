@@ -1,6 +1,6 @@
 button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] {
   position: absolute !important;
-  top: calc(50% + 205px) !important;
+  top: calc(50% + 260px) !important;
   right: auto !important;
   bottom: auto !important;
   left: 50% !important;
