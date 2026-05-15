@@ -1,13 +1,16 @@
 button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] {
   position: absolute !important;
-  top: calc(50% + 260px) !important;
+  top: calc(50% + 185px) !important;
   right: auto !important;
   bottom: auto !important;
   left: 50% !important;
   z-index: 1 !important;
   width: min(352px, calc(100vw - 64px)) !important;
+  height: 36px !important;
+  min-height: 36px !important;
   transform: translateX(-50%) !important;
   border-radius: var(--mantine-radius-md) !important;
+  padding-block: 0 !important;
 }
 
 button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] .mantine-Button-label {
@@ -17,4 +20,8 @@ button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] .m
 button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] .mantine-Button-label::after {
   content: "Перейти в бот";
   font-size: var(--mantine-font-size-sm);
+}
+
+div[style*="position: relative"] form + .mantine-Text-root {
+  margin-top: 52px !important;
 }
