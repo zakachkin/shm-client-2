@@ -1,11 +1,11 @@
 button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] {
   position: absolute !important;
-  top: calc(50% + 185px) !important;
+  top: calc(50% + 152px) !important;
   right: auto !important;
   bottom: auto !important;
   left: 50% !important;
   z-index: 1 !important;
-  width: min(352px, calc(100vw - 64px)) !important;
+  width: min(334px, calc(100vw - 84px)) !important;
   height: 36px !important;
   min-height: 36px !important;
   transform: translateX(-50%) !important;
@@ -23,5 +23,5 @@ button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] .m
 }
 
 div[style*="position: relative"] form + .mantine-Text-root {
-  margin-top: 52px !important;
+  margin-top: 48px !important;
 }
