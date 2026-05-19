@@ -27,9 +27,9 @@ div[style*="position: relative"] form + .mantine-Text-root {
 }
 
 div[style*="position: relative"]:has(input[name="confirm-password"]) button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] {
-  top: calc(50% + 232px) !important;
+  top: calc(50% + 244px) !important;
 }
 
 div[style*="position: relative"]:has(input[name="confirm-password"]) form + .mantine-Text-root {
-  margin-top: 56px !important;
+  margin-top: 68px !important;
 }
