@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Card, Text, Stack, Button, ActionIcon, TextInput, PasswordInput, Divider, Title, Center, Modal, Group, Loader, useMantineColorScheme, useComputedColorScheme, Checkbox } from '@mantine/core';
+import { Card, Text, Stack, Button, ActionIcon, TextInput, PasswordInput, Divider, Title, Center, Modal, Group, Loader, useMantineColorScheme, useComputedColorScheme, Checkbox, Tooltip } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { useForm, isEmail, hasLength } from '@mantine/form';
 import { IconLogin, IconUserPlus, IconHeadset, IconFingerprint, IconShieldLock, IconBrandTelegram, IconMailForward, IconLock, IconMoon, IconSun} from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
@@ -11,7 +12,12 @@ import TelegramLoginButton, { TelegramUser } from '../components/TelegramLoginBu
 import { config } from '../config';
 import { useTelegramWebApp } from '../hooks/useTelegramWebApp';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import DocumentModal from '../components/DocumentModal';
 import { hasTelegramOidcAuth, hasTelegramWebAppAutoAuth, hasTelegramWidget, hasTelegramWebAppAuth } from '../constants/webapp';
+
+function isPdf(value: string) {
+  return value.toLowerCase().endsWith('.pdf');
+}
 
 function base64UrlToArrayBuffer(base64url: string): ArrayBuffer {
   const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
@@ -73,8 +79,11 @@ export default function Login() {
   const [newPasswordData, setNewPasswordData] = useState({ password: '', confirmPassword: '' });
   const [acceptedLegal, setAcceptedLegal] = useState(false);
   const [verifyingToken, setVerifyingToken] = useState(false);
+  const [docModalUrl, setDocModalUrl] = useState('');
+  const [docModalTitle, setDocModalTitle] = useState('');
   const { setUser, setTelegramPhoto } = useStore();
   const { t } = useTranslation();
+  const isMobile = useMediaQuery('(max-width: 768px)');
   const modeRef = useRef(mode);
   modeRef.current = mode;
   const form = useForm({
@@ -110,6 +119,7 @@ export default function Login() {
     { href: config.PRIVACY_POLICY_URL, label: t('common.privacyPolicy') },
     { href: config.TERMS_OF_USE_URL, label: t('common.termsOfUse') },
     { href: config.PUBLIC_OFFER_URL, label: t('common.publicOffer') },
+    { href: config.USER_AGREEMENT_URL, label: t('common.userAgreement') },
   ].filter((link) => Boolean(link.href));
   const hasLegalLinks = legalLinks.length > 0;
 
@@ -497,7 +507,7 @@ export default function Login() {
   };
 
   return (
-    <Center h="80vh" style={{ position: 'relative' }}>
+    <Center style={{ minHeight: '100svh', paddingTop: 16, paddingBottom: isMobile ? 72 : 16, position: 'relative' }}>
       <Card withBorder radius="md" p="xl" w={400}>
         <Stack gap="lg">
           <Group justify="space-between" align="center">
@@ -645,35 +655,62 @@ export default function Login() {
                     </Group>
                   )}
                   {mode === 'register' && hasLegalLinks && (
-                    <Checkbox
-                      checked={acceptedLegal}
-                      onChange={(e) => setAcceptedLegal(e.currentTarget.checked)}
-                      label={
-                        <Text size="sm">
-                          {t('auth.acceptLegal')}{' '}
-                          {legalLinks.map((link, index) => (
-                            <Text
-                              key={link.href}
-                              component="span"
-                              size="sm"
-                            >
-                              {index > 0 ? ', ' : ''}
+                    <>
+                      <DocumentModal
+                        opened={!!docModalUrl}
+                        onClose={() => setDocModalUrl('')}
+                        url={docModalUrl}
+                        title={docModalTitle}
+                      />
+                      <Checkbox
+                        checked={acceptedLegal}
+                        onChange={(e) => setAcceptedLegal(e.currentTarget.checked)}
+                        label={
+                          <Text size="sm">
+                            {t('auth.acceptLegal')}{' '}
+                            {legalLinks.map((link, index) => (
                               <Text
-                                component="a"
-                                href={link.href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                c="blue"
-                                td="underline"
+                                key={link.href}
+                                component="span"
                                 size="sm"
                               >
-                                {link.label}
+                                {index > 0 ? ', ' : ''}
+                                {isPdf(link.href) ? (
+                                  <Text
+                                    component="a"
+                                    href={link.href}
+                                    c="blue"
+                                    td="underline"
+                                    size="sm"
+                                    style={{ cursor: 'pointer' }}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setDocModalTitle(link.label);
+                                      setDocModalUrl(link.href);
+                                    }}
+                                  >
+                                    {link.label}
+                                  </Text>
+                                ) : (
+                                  <Text
+                                    component="a"
+                                    href={link.href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    c="blue"
+                                    td="underline"
+                                    size="sm"
+                                  >
+                                    {link.label}
+                                  </Text>
+                                )}
                               </Text>
-                            </Text>
-                          ))}
-                        </Text>
-                      }
-                    />
+                            ))}
+                          </Text>
+                        }
+                      />
+                    </>
                   )}
                   <Button
                     type="submit"
@@ -883,20 +920,29 @@ export default function Login() {
       )}
 
       {config.SUPPORT_LINK && (
-        <Button
-          onClick={handleSupportLink}
-          style={{
-            position: 'fixed',
-            bottom: 24,
-            right: 24,
-            zIndex: 200,
-          }}
-          leftSection={<IconHeadset size={20} />}
-          radius="xl"
-          size="md"
-        >
-          {t('common.support')}
-        </Button>
+        isMobile ? (
+          <Tooltip label={t('common.support')} position="left" withArrow>
+            <ActionIcon
+              onClick={handleSupportLink}
+              style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 200 }}
+              radius="xl"
+              size="xl"
+              variant="filled"
+            >
+              <IconHeadset size={22} />
+            </ActionIcon>
+          </Tooltip>
+        ) : (
+          <Button
+            onClick={handleSupportLink}
+            style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 200 }}
+            leftSection={<IconHeadset size={20} />}
+            radius="xl"
+            size="md"
+          >
+            {t('common.support')}
+          </Button>
+        )
       )}
     </Center>
   );

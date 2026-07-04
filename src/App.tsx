@@ -1,11 +1,11 @@
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
 import { useEffect, useState } from 'react';
-import { MantineProvider, createTheme, AppShell, Group, Text, ActionIcon, useMantineColorScheme, useComputedColorScheme, Center, Loader, Box, Button, Modal, TextInput, Stack, DirectionProvider, Indicator } from '@mantine/core';
-import { Notifications } from '@mantine/notifications';
+import { MantineProvider, AppShell, Group, Text, ActionIcon, Button, Modal, TextInput, Stack, DirectionProvider, Indicator, Tooltip, Center, Loader, Box } from '@mantine/core';
+import { Notifications, notifications } from '@mantine/notifications';
 import { useMediaQuery, useHotkeys, useLongPress } from '@mantine/hooks';
-import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
-import { IconSun, IconMoon, IconLogout, IconHeadset } from '@tabler/icons-react';
+import { BrowserRouter, Routes, Route, Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { IconLogout, IconHeadset, IconBell, IconBellOff, IconWallet } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useStore } from './store/useStore';
 import { NAV_ITEMS } from './constants/navigation';
@@ -16,8 +16,17 @@ import LanguageSwitcher from './components/LanguageSwitcher';
 import { hasTelegramWebAppAutoAuth, isTelegramWebApp } from './constants/webapp';
 import { useEmailRequired } from './hooks/useEmailRequired';
 import { useTicketPoller } from './hooks/useTicketPoller';
+import { usePushNotifications } from './hooks/usePushNotifications';
+import { useNotificationFromUrl } from './hooks/useNotificationFromUrl';
 import PayHistoryModal from './components/PayHistoryModal';
+import PayModal from './components/PayModal';
 import WithdrawHistoryModal from './components/WithdrawHistoryModal';
+import { PWAInstallBanner } from './components/PWAInstallBanner';
+import { LegalLinks } from './components/LegalLinks';
+import { ThemeToggle } from './components/ThemeToggle';
+import { WebAppHeader } from './components/WebAppHeader';
+import { BottomNavigation } from './components/BottomNavigation';
+import { theme } from './theme';
 
 parseAndSaveSessionId();
 parseAndSavePartnerId();
@@ -27,259 +36,20 @@ import Profile from './pages/Profile';
 import Tickets from './pages/Tickets.tsx';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
-
-function LegalLinks() {
-  const { t } = useTranslation();
-
-  const legalLinks = [
-    { href: config.PRIVACY_POLICY_URL, label: t('common.privacyPolicy') },
-    { href: config.TERMS_OF_USE_URL, label: t('common.termsOfUse') },
-    { href: config.PUBLIC_OFFER_URL, label: t('common.publicOffer') },
-  ].filter((link) => Boolean(link.href));
-
-  const contactLinks = [
-    config.CONTACT_EMAIL ? { href: `mailto:${config.CONTACT_EMAIL}`, label: config.CONTACT_EMAIL } : null,
-    config.CONTACT_PHONE ? { href: `tel:${config.CONTACT_PHONE}`, label: config.CONTACT_PHONE } : null,
-  ].filter(Boolean) as { href: string; label: string }[];
-
-  const hasContacts = contactLinks.length > 0;
-  const hasLegal = legalLinks.length > 0;
-
-  if (!hasLegal && !hasContacts) return null;
-
-  return (
-    <Stack gap={0}>
-      {hasLegal && (
-        <Group justify="center" gap="md" wrap="wrap" py="sm">
-          {legalLinks.map((link) => (
-            <Text
-              key={link.href}
-              component="a"
-              href={link.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              size="xs"
-              c="dimmed"
-              td="underline"
-            >
-              {link.label}
-            </Text>
-          ))}
-        </Group>
-      )}
-      {hasContacts && (
-        <Group justify="center" gap="md" wrap="wrap" py="xs">
-          <Text size="xs" c="dimmed">{t('common.contacts')}:</Text>
-          {contactLinks.map((link) => (
-            <Text
-              key={link.href}
-              component="a"
-              href={link.href}
-              size="xs"
-              c="dimmed"
-              td="underline"
-            >
-              {link.label}
-            </Text>
-          ))}
-        </Group>
-      )}
-    </Stack>
-  );
-}
-
-const theme = createTheme({
-  primaryColor: 'blue',
-  fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
-  defaultRadius: 'md',
-  colors: {
-    dark: [
-      '#C1C2C5',
-      '#A6A7AB',
-      '#909296',
-      '#5c5f66',
-      '#373A40',
-      '#2C2E33',
-      '#25262b',
-      '#1A1B1E',
-      '#141517',
-      '#101113',
-    ],
-  },
-  components: {
-    Modal: {
-      defaultProps: {
-        lockScroll: false,
-      },
-    },
-  },
-});
-
-function ThemeToggle() {
-  const { setColorScheme } = useMantineColorScheme();
-  const computedColorScheme = useComputedColorScheme('light');
-
-  return (
-    <ActionIcon
-      onClick={() => setColorScheme(computedColorScheme === 'light' ? 'dark' : 'light')}
-      variant="default"
-      size="lg"
-      aria-label="Toggle color scheme"
-    >
-      {computedColorScheme === 'light' ? <IconMoon size={18} /> : <IconSun size={18} />}
-    </ActionIcon>
-  );
-}
-
-function WebAppHeader() {
-  const navigate = useNavigate();
-  const { logout } = useStore();
-  const computedColorScheme = useComputedColorScheme('light');
-  const { setColorScheme } = useMantineColorScheme();
-
-  const handleThemeToggle = () => {
-    setColorScheme(computedColorScheme === 'light' ? 'dark' : 'light');
-  };
-
-  const handleSupportLink = () => {
-    if (config.SUPPORT_LINK) {
-      const tgWebApp = window.Telegram?.WebApp;
-      if (tgWebApp && config.SUPPORT_LINK.includes('t.me')) {
-        tgWebApp.openTelegramLink(config.SUPPORT_LINK);
-      } else {
-        window.open(config.SUPPORT_LINK, '_blank');
-      }
-    }
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
-
-  return (
-    <Group justify="flex-end" p="sm" gap="xs">
-     { config.SUPPORT_LINK &&  <ActionIcon
-        onClick={handleSupportLink}
-        variant="subtle"
-        size="lg"
-        color="blue"
-      >
-        <IconHeadset size={20} />
-      </ActionIcon> }
-      <LanguageSwitcher />
-      <ActionIcon
-        onClick={handleThemeToggle}
-        variant="subtle"
-        size="lg"
-        color={computedColorScheme === 'dark' ? 'gray' : 'gray'}
-      >
-        {computedColorScheme === 'light' ? <IconMoon size={20} /> : <IconSun size={20} />}
-      </ActionIcon>
-      {!hasTelegramWebAppAutoAuth && (
-        <ActionIcon
-          onClick={handleLogout}
-          variant="subtle"
-          size="lg"
-          color="red"
-        >
-          <IconLogout size={20} />
-        </ActionIcon>
-      )}
-    </Group>
-  );
-}
-
-function BottomNavigation({ onPayments, onWithdrawals }: { onPayments: () => void; onWithdrawals: () => void }) {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const computedColorScheme = useComputedColorScheme('light');
-  const { t } = useTranslation();
-  const hasNewTicketMessages = useStore((s) => s.hasNewTicketMessages);
-  const { userEmail, isEmailLoaded, setOpenEmailModal } = useStore();
-  const emailBlocked = config.EMAIL_REQUIRED === 'true' && isEmailLoaded && !userEmail;
-
-  const handleClick = (path: string) => {
-    if (emailBlocked && (path === '/payments' || path === '/withdrawals')) { setOpenEmailModal(true); return; }
-    if (path === '/payments') { onPayments(); }
-    else if (path === '/withdrawals') { onWithdrawals(); }
-    else { navigate(path); }
-  };
-
-  return (
-    <Box
-      style={{
-        position: 'fixed',
-        bottom: 16,
-        left: 16,
-        right: 16,
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        zIndex: 100,
-      }}
-    >
-      <Box
-        style={{
-          background: computedColorScheme === 'dark'
-            ? 'rgba(40, 40, 45, 0.85)'
-            : 'rgba(255, 255, 255, 0.85)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderRadius: 20,
-          border: computedColorScheme === 'dark'
-            ? '1px solid rgba(255, 255, 255, 0.1)'
-            : '1px solid rgba(0, 0, 0, 0.08)',
-          boxShadow: computedColorScheme === 'dark'
-            ? '0 8px 32px rgba(0, 0, 0, 0.4)'
-            : '0 8px 32px rgba(0, 0, 0, 0.12)',
-          padding: '6px 8px',
-        }}
-      >
-        <Group justify="space-around" gap={0}>
-          {NAV_ITEMS.map((item) => {
-            const isActive = location.pathname === item.path;
-            const Icon = item.icon;
-            const showDot = (item.path as string) === '/tickets' && hasNewTicketMessages;
-            const isItemBlocked = emailBlocked && (item.path === '/payments' || item.path === '/withdrawals');
-            return (
-              <Box
-                key={item.path}
-                onClick={() => handleClick(item.path)}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '6px 8px',
-                  borderRadius: 12,
-                  cursor: isItemBlocked ? 'not-allowed' : 'pointer',
-                  opacity: isItemBlocked ? 0.4 : 1,
-                  background: isActive
-                    ? (computedColorScheme === 'dark' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.1)')
-                    : 'transparent',
-                  color: isActive ? 'var(--mantine-color-blue-6)' : (computedColorScheme === 'dark' ? '#9ca3af' : '#6b7280'),
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                <Indicator disabled={!showDot} color="blue" size={8} offset={2}>
-                  <Icon size={20} />
-                </Indicator>
-                <Text size="xs" mt={4} fw={isActive ? 600 : 400}>{t(item.labelKey)}</Text>
-              </Box>
-            );
-          })}
-        </Group>
-      </Box>
-    </Box>
-  );
-}
+import AddToHomeScreen from './pages/AddToHomeScreen';
 
 function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading, setUser, setIsLoading, logout, hasNewTicketMessages, userEmail, isEmailLoaded, setOpenEmailModal } = useStore();
+  const [searchParams] = useSearchParams();
+  const hasAddToHomeScreen = searchParams.has('addToHomeScreen');
+  const isPWA = window.matchMedia('(display-mode: standalone)').matches || !!(window.navigator as Navigator & { standalone?: boolean }).standalone;
+
+  const { isAuthenticated, isLoading, setUser, setIsLoading, logout, hasNewTicketMessages, userEmail, isEmailLoaded, setOpenEmailModal, user } = useStore();
   const emailBlocked = config.EMAIL_REQUIRED === 'true' && isEmailLoaded && !userEmail;
+  const { isSupported, isSubscribed, isLoading: pushLoading, error: pushError, subscribe, unsubscribe } = usePushNotifications();
   const isMobile = useMediaQuery('(max-width: 768px)');
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const {
     modalOpen: globalEmailModalOpen,
     setModalOpen: setGlobalEmailModalOpen,
@@ -300,11 +70,13 @@ function AppContent() {
     handleResendCode: handleGlobalResendCode,
   } = useEmailRequired();
 
+  useNotificationFromUrl();
   // useTicketPoller(isAuthenticated);
   useTicketPoller(false); // TODO: включить когда бэкенд будет готов
 
   const [payHistoryOpen, setPayHistoryOpen] = useState(false);
   const [withdrawHistoryOpen, setWithdrawHistoryOpen] = useState(false);
+  const [payModalOpen, setPayModalOpen] = useState(false);
   const [versionOpen, setVersionOpen] = useState(false);
   const showVersion = () => setVersionOpen(true);
   const longPressProps = useLongPress(showVersion);
@@ -325,34 +97,23 @@ function AppContent() {
     if (tgWebApp && isTelegramWebApp) {
       tgWebApp.ready();
       tgWebApp.expand();
-
-      if (tgWebApp.setHeaderColor) {
-        tgWebApp.setHeaderColor('secondary_bg_color');
-      }
-      if (tgWebApp.setBackgroundColor) {
-        tgWebApp.setBackgroundColor('secondary_bg_color');
-      }
+      if (tgWebApp.setHeaderColor) tgWebApp.setHeaderColor('secondary_bg_color');
+      if (tgWebApp.setBackgroundColor) tgWebApp.setBackgroundColor('secondary_bg_color');
     }
   }, [isTelegramWebApp]);
 
   useEffect(() => {
     const tgWebApp = window.Telegram?.WebApp;
     if (!tgWebApp || !isTelegramWebApp) return;
-
     const backButton = tgWebApp.BackButton;
     if (!backButton) return;
-
     const isMainPage = location.pathname === '/' || location.pathname === '';
-
     if (isMainPage) {
       backButton.hide();
     } else {
       backButton.show();
-      backButton.onClick(() => {
-        navigate('/');
-      });
+      backButton.onClick(() => { navigate('/'); });
     }
-
     return () => {
       backButton.hide();
       backButton.offClick(() => {});
@@ -360,14 +121,10 @@ function AppContent() {
   }, [location.pathname, navigate, isTelegramWebApp]);
 
   useEffect(() => {
+    if (hasAddToHomeScreen) { setIsLoading(false); return; }
     const checkAuth = async () => {
       const token = getCookie();
-
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
-
+      if (!token) { setIsLoading(false); return; }
       try {
         const response = await auth.getCurrentUser();
         const responseData = response.data.data;
@@ -379,13 +136,31 @@ function AppContent() {
         setIsLoading(false);
       }
     };
-
     checkAuth();
-  }, [setUser, setIsLoading]);
+  }, [setUser, setIsLoading, hasAddToHomeScreen]);
 
-  useHotkeys([
-    ['shift + V', () => setVersionOpen(true)],
-  ]);
+  useEffect(() => {
+    if (!config.SUPPORT_WIDGET_URL || !user) return;
+    const existing = document.getElementById('__support_widget__');
+    if (existing) existing.remove();
+    const script = document.createElement('script');
+    script.id = '__support_widget__';
+    script.src = config.SUPPORT_WIDGET_URL;
+    script.async = true;
+    script.dataset.api = config.SUPPORT_WIDGET_API || '';
+    script.dataset.userId = String(user.user_id);
+    script.dataset.colorPrimary = '#1971c2';
+    script.dataset.lang = i18n.language === 'ru' ? 'ru' : 'en';
+    document.body.appendChild(script);
+    return () => { script.remove(); };
+  }, [user?.user_id]);
+
+  useHotkeys([['shift + V', () => setVersionOpen(true)]]);
+
+  if (hasAddToHomeScreen) {
+    if (isPWA) return <Navigate to="/" replace />;
+    return <AddToHomeScreen />;
+  }
 
   if (isLoading) {
     return (
@@ -426,16 +201,10 @@ function AppContent() {
           onChange={(e) => setGlobalEmailInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleGlobalSaveEmail()}
         />
-        <Text size="xs" c="dimmed">
-          {t('profile.emailHint')}
-        </Text>
+        <Text size="xs" c="dimmed">{t('profile.emailHint')}</Text>
         <Group justify="flex-end">
-          <Button variant="light" onClick={() => setGlobalEmailModalOpen(false)}>
-            {t('common.cancel')}
-          </Button>
-          <Button onClick={handleGlobalSaveEmail} loading={globalEmailSaving} disabled={!isValidEmail(globalEmailInput)}>
-            {t('common.save')}
-          </Button>
+          <Button variant="light" onClick={() => setGlobalEmailModalOpen(false)}>{t('common.cancel')}</Button>
+          <Button onClick={handleGlobalSaveEmail} loading={globalEmailSaving} disabled={!isValidEmail(globalEmailInput)}>{t('common.save')}</Button>
         </Group>
       </Stack>
     </Modal>
@@ -448,9 +217,7 @@ function AppContent() {
       title={t('profile.verifyEmail')}
     >
       <Stack gap="md">
-        <Text size="sm">
-          {t('profile.verifyEmailDescription', { email: globalPendingEmail })}
-        </Text>
+        <Text size="sm">{t('profile.verifyEmailDescription', { email: globalPendingEmail })}</Text>
         <TextInput
           label={t('profile.verifyCode')}
           placeholder="123456"
@@ -470,14 +237,8 @@ function AppContent() {
             {globalResendCooldown > 0 ? `${t('profile.resendCode')} (${globalResendCooldown}s)` : t('profile.resendCode')}
           </Button>
           <Group gap="xs">
-            <Button variant="light" onClick={() => setGlobalVerifyModalOpen(false)}>
-              {t('common.cancel')}
-            </Button>
-            <Button
-              onClick={handleGlobalConfirmEmail}
-              loading={globalVerifyConfirming}
-              disabled={!globalVerifyCode.trim()}
-            >
+            <Button variant="light" onClick={() => setGlobalVerifyModalOpen(false)}>{t('common.cancel')}</Button>
+            <Button onClick={handleGlobalConfirmEmail} loading={globalVerifyConfirming} disabled={!globalVerifyCode.trim()}>
               {t('profile.confirmEmail')}
             </Button>
           </Group>
@@ -488,7 +249,7 @@ function AppContent() {
 
   const versionModal = (
     <Modal opened={versionOpen} onClose={() => setVersionOpen(false)} title="Version" size="xs" centered>
-      <Text size="sm" ff="monospace" ta="center" py="xs">{typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '?'} {  }</Text>
+      <Text size="sm" ff="monospace" ta="center" py="xs">{typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '?'}</Text>
     </Modal>
   );
 
@@ -513,13 +274,14 @@ function AppContent() {
         </Box>
         <PayHistoryModal opened={payHistoryOpen} onClose={() => setPayHistoryOpen(false)} />
         <WithdrawHistoryModal opened={withdrawHistoryOpen} onClose={() => setWithdrawHistoryOpen(false)} />
+        <PWAInstallBanner />
       </>
     );
   }
 
   const appShellMaxWidth = 1200;
   const appShellOffset = `max(0px, calc(50% - ${appShellMaxWidth / 2}px))`;
-  const hasLegalLinks = [config.PRIVACY_POLICY_URL, config.TERMS_OF_USE_URL, config.PUBLIC_OFFER_URL, config.CONTACT_EMAIL, config.CONTACT_PHONE].some(Boolean);
+  const hasLegalLinks = [config.PRIVACY_POLICY_URL, config.TERMS_OF_USE_URL, config.PUBLIC_OFFER_URL, config.USER_AGREEMENT_URL, config.CONTACT_EMAIL, config.CONTACT_PHONE].some(Boolean);
 
   return (
     <>
@@ -531,12 +293,7 @@ function AppContent() {
         footer={hasLegalLinks ? { height: 'auto' } : undefined}
         padding="md"
         styles={{
-          header: {
-            left: appShellOffset,
-            right: appShellOffset,
-            borderBottom: 0,
-            opacity: 100,
-          },
+          header: { left: appShellOffset, right: appShellOffset, borderBottom: 0, opacity: 100 },
           main: {
             paddingLeft: `calc(var(--app-shell-padding) + var(--app-shell-navbar-offset, 0px) + ${appShellOffset})`,
             paddingRight: `calc(var(--app-shell-padding) + ${appShellOffset})`,
@@ -547,17 +304,9 @@ function AppContent() {
           <Group h="100%" px="md" justify="space-between" wrap="nowrap">
             <Group gap="xs" onClick={() => navigate('/')} style={{ cursor: 'pointer' }} {...longPressProps}>
               {config.LOGO_URL && (
-                <img
-                  src={config.LOGO_URL}
-                  alt=""
-                  style={{ height: 32, width: 32, objectFit: 'contain', flexShrink: 0 }}
-                />
+                <img src={config.LOGO_URL} alt="" style={{ height: 32, width: 32, objectFit: 'contain', flexShrink: 0 }} />
               )}
-              <Text
-                size="lg"
-                fw={700}
-                visibleFrom={config.APP_NAME.length > 10 ? 'sm' : undefined}
-              >
+              <Text size="lg" fw={700} visibleFrom={config.APP_NAME.length > 10 ? 'sm' : undefined}>
                 {config.APP_NAME}
               </Text>
             </Group>
@@ -582,14 +331,7 @@ function AppContent() {
                 }
                 return (
                   <Indicator key={item.path} disabled={!showDot} color="blue" size={8} offset={4}>
-                    <Button
-                      component={Link}
-                      to={item.path}
-                      leftSection={<Icon size={16} />}
-                      variant={isActive ? 'light' : 'subtle'}
-                      size="xs"
-                      radius="md"
-                    >
+                    <Button component={Link} to={item.path} leftSection={<Icon size={16} />} variant={isActive ? 'light' : 'subtle'} size="xs" radius="md">
                       {t(item.labelKey)}
                     </Button>
                   </Indicator>
@@ -597,30 +339,61 @@ function AppContent() {
               })}
             </Group>
             <Group>
-              { config.SUPPORT_LINK &&  <ActionIcon
-                onClick={handleSupportLink}
-                variant="subtle"
-                size="lg"
-                color="blue"
-              >
-              <IconHeadset size={20} />
-              </ActionIcon> }
+              {user && (
+                <Button
+                  leftSection={<IconWallet size={16} />}
+                  variant="light"
+                  color="cyan"
+                  size="xs"
+                  onClick={() => setPayModalOpen(true)}
+                >
+                  {user.balance} {t('common.currency')}
+                </Button>
+              )}
+              {isSupported && (
+                <Tooltip
+                  label={isSubscribed ? t('profile.pushDisableHint') : t('profile.pushEnableHint')}
+                  position="bottom"
+                  withArrow
+                >
+                  <Indicator color="green" size={8} disabled={isSubscribed} offset={4}>
+                    <ActionIcon
+                      onClick={async () => {
+                        if (isSubscribed) {
+                          const ok = await unsubscribe();
+                          if (ok) notifications.show({ message: t('profile.pushDisabled'), color: 'gray' });
+                        } else {
+                          const ok = await subscribe();
+                          if (ok) notifications.show({ message: t('profile.pushEnabled'), color: 'green' });
+                          else if (pushError) notifications.show({ message: pushError, color: 'red' });
+                        }
+                      }}
+                      variant={isSubscribed ? 'default' : 'light'}
+                      color={isSubscribed ? undefined : 'green'}
+                      size="lg"
+                      loading={pushLoading}
+                      aria-label="Push notifications"
+                    >
+                      {isSubscribed ? <IconBellOff size={16} /> : <IconBell size={16} />}
+                    </ActionIcon>
+                  </Indicator>
+                </Tooltip>
+              )}
+              {config.SUPPORT_LINK && (
+                <ActionIcon onClick={handleSupportLink} variant="subtle" size="lg" color="blue">
+                  <IconHeadset size={20} />
+                </ActionIcon>
+              )}
               <LanguageSwitcher />
               <ThemeToggle />
               {!hasTelegramWebAppAutoAuth && (
-              <ActionIcon
-                onClick={logout}
-                variant="default"
-                size="lg"
-                aria-label="Logout"
-              >
-                <IconLogout size={18} />
-              </ActionIcon>
-            )}
+                <ActionIcon onClick={logout} variant="default" size="lg" aria-label="Logout">
+                  <IconLogout size={18} />
+                </ActionIcon>
+              )}
             </Group>
           </Group>
         </AppShell.Header>
-
         <AppShell.Main>
           <Routes>
             <Route path="/" element={<Services />} />
@@ -635,6 +408,8 @@ function AppContent() {
       </AppShell>
       <PayHistoryModal opened={payHistoryOpen} onClose={() => setPayHistoryOpen(false)} />
       <WithdrawHistoryModal opened={withdrawHistoryOpen} onClose={() => setWithdrawHistoryOpen(false)} />
+      <PayModal opened={payModalOpen} onClose={() => setPayModalOpen(false)} />
+      <PWAInstallBanner />
     </>
   );
 }
@@ -650,10 +425,7 @@ function App() {
       script.src = config.BITRIX_WIDGET_SCRIPT_URL + '?' + (Date.now() / 60000 | 0);
       const firstScript = document.getElementsByTagName('script')[0];
       firstScript?.parentNode?.insertBefore(script, firstScript);
-
-      return () => {
-        script.remove();
-      };
+      return () => { script.remove(); };
     }
   }, []);
 

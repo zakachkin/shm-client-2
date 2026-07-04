@@ -3,6 +3,7 @@ node_modules/
 
 # Build output
 dist/
+dev-dist/
 
 # Environment files
 .env
@@ -30,9 +31,6 @@ Thumbs.db
 
 # Test coverage
 coverage/
-
-# GitHub Actions
-.github/*
 
 vite.config-s.ts
 /public/config.js

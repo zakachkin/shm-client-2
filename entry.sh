@@ -59,7 +59,9 @@ fi
 
 if [ ! -z "$APP_NAME" ]; then
     sed -i "s|<title>.*</title>|<title>${APP_NAME}</title>|" /app/index.html
+    sed -i "s|<title>.*</title>|<title>${APP_NAME}</title>|" /app/addToHomeScreen/index.html
     sed -i "s|<meta property=\"og:title\" content=\".*\" />|<meta property=\"og:title\" content=\"${APP_NAME}\" />|" /app/index.html
+    sed -i "s|<meta name=\"apple-mobile-web-app-title\" content=\"SHM Client\"/>|<meta name=\"apple-mobile-web-app-title\" content=\"${APP_NAME}\"/>" /app/addToHomeScreen/index.html
 fi
 
 if [ ! -z "$APP_DESCRIPTION" ]; then
@@ -81,10 +83,13 @@ window.__APP_CONFIG__ = {
   TELEGRAM_WEBAPP_PROFILE: "${TELEGRAM_WEBAPP_PROFILE:-}",
   SUPPORT_LINK: "${SUPPORT_LINK:-}",
   PRIVACY_POLICY_URL: "${PRIVACY_POLICY_URL:-}",
+  RETURN_POLICY_URL: "${RETURN_POLICY_URL:-}",
   TERMS_OF_USE_URL: "${TERMS_OF_USE_URL:-}",
   PUBLIC_OFFER_URL: "${PUBLIC_OFFER_URL:-}",
+  USER_AGREEMENT_URL: "${USER_AGREEMENT_URL:-}",
   DEFAULT_LANGUAGE: "${DEFAULT_LANGUAGE:-ru}",
   SINGLE_LANGUAGE: "${SINGLE_LANGUAGE:-}",
+  CUSTOM_LANGS: "${CUSTOM_LANGS:-}",
   SHM_BASE_PATH: "${SHM_BASE_PATH:-/}",
   OTP_ENABLE: "${OTP_ENABLE:-true}",
   PASSKEY_ENABLE: "${PASSKEY_ENABLE:-true}",
@@ -140,9 +145,39 @@ window.__APP_CONFIG__ = {
   DEVICE_CONFIG_TEXT: "${DEVICE_CONFIG_TEXT:-}",
   CAPTCHA_ENABLED: "${CAPTCHA_ENABLED:-false}",
   ORDER_SORTING: "${ORDER_SORTING:-cost_asc}",
+  ORDER_COST_DISCOUNT: "${ORDER_SORTING:-true}",
+  ORDER_COST_WITH_BONUSES: "${ORDER_SORTING:-false}",
   CONTACT_EMAIL: "${CONTACT_EMAIL:-}",
-  CONTACT_PHONE: "${CONTACT_PHONE:-}"
+  CONTACT_PHONE: "${CONTACT_PHONE:-}",
+  WEB_PUSH_ENABLE: "${WEB_PUSH_ENABLE:-false}",
+  VAPID_PUBLIC_KEY: "${VAPID_PUBLIC_KEY:-}",
+  SUPPORT_WIDGET_URL: "${SUPPORT_WIDGET_URL:-}",
+  SUPPORT_WIDGET_API: "${SUPPORT_WIDGET_API:-}",
 };
 EOF
+
+cat > "/app/manifest.webmanifest" << EOF
+{
+  "name": "${APP_NAME:-SHM Client}",
+  "short_name": "${APP_NAME:-SHM}",
+  "description": "${APP_DESCRIPTION:-Powerful and flexible client}",
+  "theme_color": "${PWA_THEME_COLOR:-#1971c2}",
+  "background_color": "${PWA_BG_COLOR:-#1a1b1e}",
+  "display": "standalone",
+  "id": "/",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ],
+  "screenshots": [
+    { "src": "screenshot-desktop.png", "sizes": "3410x1872", "type": "image/png", "form_factor": "wide", "label": "App" },
+    { "src": "screenshot-mobile.png", "sizes": "1154x1868", "type": "image/png", "form_factor": "narrow", "label": "App" }
+  ]
+}
+EOF
+
+chmod 644 /app/locales/*.json 2>/dev/null || true
 
 nginx -g "daemon off;"
