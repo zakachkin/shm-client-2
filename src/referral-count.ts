@@ -1,19 +1,68 @@
 import { userApi } from './api/client';
 
+type AnyRecord = Record<string, unknown>;
+
 type UserProfileResponse = {
-  data?: Record<string, unknown> | Record<string, unknown>[];
+  data?: AnyRecord | AnyRecord[];
 };
 
 let loadingPromise: Promise<number> | null = null;
 
-const normalizeReferrals = (value: unknown): number => {
+const toNumber = (value: unknown): number | null => {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
   if (typeof value === 'string' && value.trim() !== '') {
     const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : 0;
+    return Number.isFinite(parsed) ? parsed : null;
   }
+  return null;
+};
+
+const normalizeReferrals = (value: unknown): number | null => {
+  const directNumber = toNumber(value);
+  if (directNumber !== null) return directNumber;
+
   if (Array.isArray(value)) return value.length;
-  return 0;
+
+  if (value && typeof value === 'object') {
+    const record = value as AnyRecord;
+
+    for (const key of ['count', 'total', 'qnt', 'quantity', 'length']) {
+      const nestedNumber = toNumber(record[key]);
+      if (nestedNumber !== null) return nestedNumber;
+    }
+
+    for (const key of ['data', 'items', 'list', 'rows']) {
+      if (Array.isArray(record[key])) return record[key].length;
+    }
+  }
+
+  return null;
+};
+
+const findReferralsValue = (source: unknown, seen = new Set<unknown>()): unknown => {
+  if (!source || typeof source !== 'object' || seen.has(source)) return undefined;
+  seen.add(source);
+
+  if (Array.isArray(source)) {
+    for (const item of source) {
+      const nested = findReferralsValue(item, seen);
+      if (nested !== undefined) return nested;
+    }
+    return undefined;
+  }
+
+  const record = source as AnyRecord;
+
+  if (Object.prototype.hasOwnProperty.call(record, 'referrals')) {
+    return record.referrals;
+  }
+
+  for (const value of Object.values(record)) {
+    const nested = findReferralsValue(value, seen);
+    if (nested !== undefined) return nested;
+  }
+
+  return undefined;
 };
 
 const getProfileFromResponse = (payload: UserProfileResponse) => {
@@ -25,8 +74,10 @@ const loadReferralCount = async () => {
 
   loadingPromise = userApi.getProfile()
     .then((response) => {
-      const profile = getProfileFromResponse(response.data as UserProfileResponse);
-      return profile ? normalizeReferrals(profile.referrals) : 0;
+      const payload = response.data as UserProfileResponse;
+      const profile = getProfileFromResponse(payload);
+      const referralsValue = findReferralsValue(profile || payload);
+      return normalizeReferrals(referralsValue) ?? 0;
     })
     .catch(() => 0)
     .finally(() => {
