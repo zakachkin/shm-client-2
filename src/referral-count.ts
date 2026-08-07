@@ -46,8 +46,8 @@ const upsertReferralCount = (bonusContainer: HTMLElement, count: number) => {
     referralElement.dataset.referralCount = 'true';
     referralElement.style.marginTop = '14px';
     referralElement.style.fontSize = '14px';
-    referralElement.style.fontWeight = '500';
-    referralElement.style.color = 'var(--mantine-color-red-6)';
+    referralElement.style.fontWeight = '400';
+    referralElement.style.color = 'var(--mantine-color-dimmed)';
     bonusContainer.appendChild(referralElement);
   }
 
