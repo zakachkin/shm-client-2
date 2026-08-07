@@ -1,15 +1,10 @@
+import { userApi } from './api/client';
+
 type UserProfileResponse = {
   data?: Record<string, unknown> | Record<string, unknown>[];
 };
 
-let cachedReferralCount: number | null = null;
 let loadingPromise: Promise<number> | null = null;
-
-const getCookie = (name: string) => {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  return parts.length === 2 ? parts.pop()?.split(';').shift() || '' : '';
-};
 
 const normalizeReferrals = (value: unknown): number => {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -21,22 +16,17 @@ const normalizeReferrals = (value: unknown): number => {
   return 0;
 };
 
+const getProfileFromResponse = (payload: UserProfileResponse) => {
+  return Array.isArray(payload.data) ? payload.data[0] : payload.data;
+};
+
 const loadReferralCount = async () => {
-  if (cachedReferralCount !== null) return cachedReferralCount;
   if (loadingPromise) return loadingPromise;
 
-  loadingPromise = fetch('/shm/v1/user', {
-    credentials: 'include',
-    headers: {
-      ...(getCookie('session_id') ? { session_id: getCookie('session_id') } : {}),
-    },
-  })
-    .then(async (response) => {
-      if (!response.ok) return 0;
-      const payload = (await response.json()) as UserProfileResponse;
-      const profile = Array.isArray(payload.data) ? payload.data[0] : payload.data;
-      cachedReferralCount = profile ? normalizeReferrals(profile.referrals) : 0;
-      return cachedReferralCount;
+  loadingPromise = userApi.getProfile()
+    .then((response) => {
+      const profile = getProfileFromResponse(response.data as UserProfileResponse);
+      return profile ? normalizeReferrals(profile.referrals) : 0;
     })
     .catch(() => 0)
     .finally(() => {
@@ -54,25 +44,30 @@ const findBonusContainer = () => {
     ?.parentElement || null;
 };
 
-const renderReferralCount = async () => {
-  if (!window.location.pathname.includes('/profile')) return;
+const upsertReferralCount = (bonusContainer: HTMLElement, count: number) => {
+  let referralElement = bonusContainer.querySelector<HTMLElement>('[data-referral-count]');
 
+  if (!referralElement) {
+    referralElement = document.createElement('div');
+    referralElement.dataset.referralCount = 'true';
+    referralElement.style.marginTop = '14px';
+    referralElement.style.fontSize = '14px';
+    referralElement.style.fontWeight = '500';
+    referralElement.style.color = 'var(--mantine-color-red-6)';
+    bonusContainer.appendChild(referralElement);
+  }
+
+  referralElement.textContent = `Приведено друзей: ${count}`;
+};
+
+const renderReferralCount = async () => {
   const bonusContainer = findBonusContainer();
-  if (!bonusContainer || bonusContainer.querySelector('[data-referral-count]')) return;
+  if (!bonusContainer) return;
 
   const count = await loadReferralCount();
 
-  if (!document.body.contains(bonusContainer) || bonusContainer.querySelector('[data-referral-count]')) return;
-
-  const referralElement = document.createElement('div');
-  referralElement.dataset.referralCount = 'true';
-  referralElement.textContent = `Приведено друзей: ${count}`;
-  referralElement.style.marginTop = '14px';
-  referralElement.style.fontSize = '14px';
-  referralElement.style.fontWeight = '500';
-  referralElement.style.color = 'var(--mantine-color-red-6)';
-
-  bonusContainer.appendChild(referralElement);
+  if (!document.body.contains(bonusContainer)) return;
+  upsertReferralCount(bonusContainer, count);
 };
 
 export const initReferralCount = () => {
