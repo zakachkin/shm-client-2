@@ -11,15 +11,24 @@ button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] {
   transform: translateX(-50%) !important;
   border-radius: var(--mantine-radius-md) !important;
   padding-block: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  white-space: nowrap !important;
 }
 
+/* Desktop support button already has a Mantine label. Hide it and render the
+   same text on the button itself so the rule also works for mobile ActionIcon. */
 button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] .mantine-Button-label {
-  font-size: 0;
+  display: none !important;
 }
 
-button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] .mantine-Button-label::after {
+button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"]::after {
   content: "Перейти в бот";
+  display: inline-block;
   font-size: var(--mantine-font-size-sm);
+  line-height: 1;
 }
 
 div[style*="position: relative"] form + .mantine-Text-root {
