@@ -80,9 +80,16 @@ export function WebAppHeader() {
         </Tooltip>
       )}
       {config.SUPPORT_LINK && (
-        <ActionIcon onClick={handleSupportLink} variant="subtle" size="lg" color="blue">
-          <IconHeadset size={20} />
-        </ActionIcon>
+        <Button
+          onClick={handleSupportLink}
+          variant="subtle"
+          size="xs"
+          color="blue"
+          leftSection={<IconHeadset size={18} />}
+          aria-label="Перейти в бот"
+        >
+          Перейти в бот
+        </Button>
       )}
       <LanguageSwitcher />
       <ActionIcon
