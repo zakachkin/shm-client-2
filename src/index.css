@@ -57,6 +57,14 @@ select {
   font: inherit;
 }
 
+@media (max-width: 768px) {
+  .b24-widget-button-position-bottom-right,
+  .b24-widget-button-wrapper.b24-widget-button-position-bottom-right {
+    right: 8px !important;
+    bottom: 8px !important;
+  }
+}
+
 @supports (-webkit-touch-callout: none) {
   body,
   #root {
