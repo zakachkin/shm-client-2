@@ -1,50 +1,52 @@
-button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] {
-  position: absolute !important;
-  top: calc(50% + 124px) !important;
-  right: auto !important;
-  bottom: auto !important;
-  left: 50% !important;
-  z-index: 1 !important;
-  width: min(334px, calc(100vw - 84px)) !important;
-  height: 36px !important;
-  min-height: 36px !important;
-  transform: translateX(-50%) !important;
-  border-radius: var(--mantine-radius-md) !important;
-  padding: 0 16px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 8px !important;
-  white-space: nowrap !important;
-}
+@media (max-width: 768px) {
+  button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] {
+    position: absolute !important;
+    top: calc(50% + 124px) !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: 50% !important;
+    z-index: 1 !important;
+    width: min(334px, calc(100vw - 84px)) !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    transform: translateX(-50%) !important;
+    border-radius: var(--mantine-radius-md) !important;
+    padding: 0 16px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    white-space: nowrap !important;
+  }
 
-button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] .mantine-ActionIcon-icon,
-button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] > span:not(.mantine-Button-label) {
-  width: auto !important;
-  flex: 0 0 auto !important;
-  margin: 0 !important;
-}
+  button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] .mantine-ActionIcon-icon,
+  button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] > span:not(.mantine-Button-label) {
+    width: auto !important;
+    flex: 0 0 auto !important;
+    margin: 0 !important;
+  }
 
-button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] .mantine-Button-label {
-  display: none !important;
-}
+  button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] .mantine-Button-label {
+    display: none !important;
+  }
 
-button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"]::after {
-  content: "Перейти в бот";
-  display: inline-block;
-  flex: 0 0 auto;
-  font-size: var(--mantine-font-size-sm);
-  line-height: 1;
-}
+  button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"]::after {
+    content: "Перейти в бот";
+    display: inline-block;
+    flex: 0 0 auto;
+    font-size: var(--mantine-font-size-sm);
+    line-height: 1;
+  }
 
-div[style*="position: relative"] form + .mantine-Text-root {
-  margin-top: 58px !important;
-}
+  div[style*="position: relative"] form + .mantine-Text-root {
+    margin-top: 58px !important;
+  }
 
-div[style*="position: relative"]:has(input[name="confirm-password"]) button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] {
-  top: calc(50% + 216px) !important;
-}
+  div[style*="position: relative"]:has(input[name="confirm-password"]) button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] {
+    top: calc(50% + 216px) !important;
+  }
 
-div[style*="position: relative"]:has(input[name="confirm-password"]) form + .mantine-Text-root {
-  margin-top: 78px !important;
+  div[style*="position: relative"]:has(input[name="confirm-password"]) form + .mantine-Text-root {
+    margin-top: 78px !important;
+  }
 }
