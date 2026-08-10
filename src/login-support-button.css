@@ -1,7 +1,7 @@
 @media (max-width: 768px) {
   button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] {
     position: absolute !important;
-    top: calc(50% + 124px) !important;
+    top: calc(50% + 144px) !important;
     right: auto !important;
     bottom: auto !important;
     left: 50% !important;
@@ -39,14 +39,14 @@
   }
 
   div[style*="position: relative"] form + .mantine-Text-root {
-    margin-top: 58px !important;
+    margin-top: 78px !important;
   }
 
   div[style*="position: relative"]:has(input[name="confirm-password"]) button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] {
-    top: calc(50% + 216px) !important;
+    top: calc(50% + 236px) !important;
   }
 
   div[style*="position: relative"]:has(input[name="confirm-password"]) form + .mantine-Text-root {
-    margin-top: 78px !important;
+    margin-top: 98px !important;
   }
 }
