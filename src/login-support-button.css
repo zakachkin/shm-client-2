@@ -10,12 +10,21 @@ button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] {
   min-height: 36px !important;
   transform: translateX(-50%) !important;
   border-radius: var(--mantine-radius-md) !important;
-  padding-block: 0 !important;
+  padding: 0 16px !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   gap: 8px !important;
   white-space: nowrap !important;
+}
+
+/* ActionIcon wraps the headset in a full-width span. Shrink that wrapper so
+   the icon and label stay together in the visual center of the button. */
+button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] .mantine-ActionIcon-icon,
+button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] > span:not(.mantine-Button-label) {
+  width: auto !important;
+  flex: 0 0 auto !important;
+  margin: 0 !important;
 }
 
 /* Desktop support button already has a Mantine label. Hide it and render the
@@ -27,12 +36,13 @@ button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] .m
 button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"]::after {
   content: "Перейти в бот";
   display: inline-block;
+  flex: 0 0 auto;
   font-size: var(--mantine-font-size-sm);
   line-height: 1;
 }
 
 div[style*="position: relative"] form + .mantine-Text-root {
-  margin-top: 48px !important;
+  margin-top: 58px !important;
 }
 
 div[style*="position: relative"]:has(input[name="confirm-password"]) button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] {
@@ -40,5 +50,5 @@ div[style*="position: relative"]:has(input[name="confirm-password"]) button[styl
 }
 
 div[style*="position: relative"]:has(input[name="confirm-password"]) form + .mantine-Text-root {
-  margin-top: 68px !important;
+  margin-top: 78px !important;
 }
