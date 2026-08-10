@@ -1,6 +1,6 @@
 button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] {
   position: absolute !important;
-  top: calc(50% + 108px) !important;
+  top: calc(50% + 116px) !important;
   right: auto !important;
   bottom: auto !important;
   left: 50% !important;
@@ -18,8 +18,6 @@ button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] {
   white-space: nowrap !important;
 }
 
-/* ActionIcon wraps the headset in a full-width span. Shrink that wrapper so
-   the icon and label stay together in the visual center of the button. */
 button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] .mantine-ActionIcon-icon,
 button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] > span:not(.mantine-Button-label) {
   width: auto !important;
@@ -27,8 +25,6 @@ button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] > 
   margin: 0 !important;
 }
 
-/* Desktop support button already has a Mantine label. Hide it and render the
-   same text on the button itself so the rule also works for mobile ActionIcon. */
 button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] .mantine-Button-label {
   display: none !important;
 }
@@ -46,7 +42,7 @@ div[style*="position: relative"] form + .mantine-Text-root {
 }
 
 div[style*="position: relative"]:has(input[name="confirm-password"]) button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] {
-  top: calc(50% + 200px) !important;
+  top: calc(50% + 208px) !important;
 }
 
 div[style*="position: relative"]:has(input[name="confirm-password"]) form + .mantine-Text-root {
