@@ -1,6 +1,6 @@
 button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] {
   position: absolute !important;
-  top: calc(50% + 120px) !important;
+  top: calc(50% + 108px) !important;
   right: auto !important;
   bottom: auto !important;
   left: 50% !important;
@@ -46,7 +46,7 @@ div[style*="position: relative"] form + .mantine-Text-root {
 }
 
 div[style*="position: relative"]:has(input[name="confirm-password"]) button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] {
-  top: calc(50% + 212px) !important;
+  top: calc(50% + 200px) !important;
 }
 
 div[style*="position: relative"]:has(input[name="confirm-password"]) form + .mantine-Text-root {
