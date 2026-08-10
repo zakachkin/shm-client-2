@@ -1,6 +1,7 @@
 import { StrictMode, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import './i18n'
+import './index.css'
 import './login-support-button.css'
 import App from './App.tsx'
 import { initReferralCount } from './referral-count'
