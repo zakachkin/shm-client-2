@@ -3,11 +3,6 @@ import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching'
 
 declare const self: ServiceWorkerGlobalScope
 
-self.skipWaiting()
-self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim())
-})
-
 cleanupOutdatedCaches()
 precacheAndRoute(self.__WB_MANIFEST)
 
