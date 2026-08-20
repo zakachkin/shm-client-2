@@ -36,8 +36,13 @@ button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"]::a
   line-height: 1;
 }
 
-/* Desktop card is vertically centered. Keep the bot button directly below
-   the submit button instead of leaving it fixed in the viewport corner. */
+/* Keep registration/forgot-password text above the absolutely positioned
+   support button if browser layout becomes tighter. */
+div[style*="position: relative"] form + .mantine-Text-root {
+  position: relative;
+  z-index: 2;
+}
+
 @media (min-width: 769px) {
   button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] {
     top: calc(50% + 180px) !important;
@@ -47,8 +52,19 @@ button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"]::a
     margin-top: 66px !important;
   }
 
+  /* When Telegram Login Widget is disabled there is no iframe inside the
+     login card, so the card becomes shorter. Move the bot button up with the
+     form instead of letting it cover the registration link. */
+  div[style*="position: relative"]:not(:has(iframe)) > button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] {
+    top: calc(50% + 118px) !important;
+  }
+
   div[style*="position: relative"]:has(input[name="confirm-password"]) button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] {
     top: calc(50% + 272px) !important;
+  }
+
+  div[style*="position: relative"]:has(input[name="confirm-password"]):not(:has(iframe)) > button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] {
+    top: calc(50% + 210px) !important;
   }
 
   div[style*="position: relative"]:has(input[name="confirm-password"]) form + .mantine-Text-root {
@@ -65,8 +81,16 @@ button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"]::a
     margin-top: 78px !important;
   }
 
+  div[style*="position: relative"]:not(:has(iframe)) > button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] {
+    top: calc(50% + 104px) !important;
+  }
+
   div[style*="position: relative"]:has(input[name="confirm-password"]) button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] {
     top: calc(50% + 236px) !important;
+  }
+
+  div[style*="position: relative"]:has(input[name="confirm-password"]):not(:has(iframe)) > button[style*="position: fixed"][style*="bottom: 24px"][style*="right: 24px"] {
+    top: calc(50% + 196px) !important;
   }
 
   div[style*="position: relative"]:has(input[name="confirm-password"]) form + .mantine-Text-root {
