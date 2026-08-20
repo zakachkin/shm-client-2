@@ -13,7 +13,16 @@ export const CUSTOM_LANGS: string[] = config.CUSTOM_LANGS
 const allLangs = [...BUILT_IN_LANGS, ...CUSTOM_LANGS];
 
 const isSingleLanguage = config.SINGLE_LANGUAGE === 'true';
-const savedLanguage = localStorage.getItem('shm_language');
+
+const getSavedLanguage = (): string | null => {
+  try {
+    return window.localStorage.getItem('shm_language');
+  } catch {
+    return null;
+  }
+};
+
+const savedLanguage = getSavedLanguage();
 
 const activeLangs = isSingleLanguage
   ? [config.DEFAULT_LANGUAGE || 'en']
