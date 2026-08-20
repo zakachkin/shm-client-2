@@ -39,10 +39,6 @@ export default defineConfig({
     }),
   ],
   base: './',
-  build: {
-    target: ['es2019', 'safari14'],
-    cssTarget: 'safari14',
-  },
   define: {
     __APP_VERSION__: JSON.stringify(version),
   },
