@@ -14,6 +14,10 @@ declare global {
   }
 }
 
+const CACHE_KEY = 'shm_referral_count_value';
+const LOCK_KEY = 'shm_referral_count_loading';
+const LOCK_TTL_MS = 10000;
+
 const toNumber = (value: unknown): number => {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
   if (typeof value === 'string' && value.trim() !== '') {
@@ -23,18 +27,100 @@ const toNumber = (value: unknown): number => {
   return 0;
 };
 
+const getStoredCount = () => {
+  try {
+    const value = window.localStorage.getItem(CACHE_KEY);
+    return value === null ? null : toNumber(value);
+  } catch {
+    return null;
+  }
+};
+
+const setStoredCount = (count: number) => {
+  try {
+    window.localStorage.setItem(CACHE_KEY, String(count));
+  } catch {
+  }
+};
+
+const isLocked = () => {
+  try {
+    const lockedAt = Number(window.localStorage.getItem(LOCK_KEY) || 0);
+    return lockedAt > 0 && Date.now() - lockedAt < LOCK_TTL_MS;
+  } catch {
+    return false;
+  }
+};
+
+const setLock = () => {
+  try {
+    window.localStorage.setItem(LOCK_KEY, String(Date.now()));
+  } catch {
+  }
+};
+
+const clearLock = () => {
+  try {
+    window.localStorage.removeItem(LOCK_KEY);
+  } catch {
+  }
+};
+
+const waitForStoredCount = () => new Promise<number>((resolve) => {
+  let attempts = 0;
+  const maxAttempts = 20;
+
+  const check = () => {
+    const stored = getStoredCount();
+    if (stored !== null) {
+      resolve(stored);
+      return;
+    }
+
+    attempts += 1;
+    if (attempts >= maxAttempts) {
+      resolve(0);
+      return;
+    }
+
+    window.setTimeout(check, 250);
+  };
+
+  check();
+});
+
 const loadReferralCountOnce = async () => {
   if (typeof window.__referralCountValue === 'number') return window.__referralCountValue;
   if (window.__referralCountPromise) return window.__referralCountPromise;
 
+  const stored = getStoredCount();
+  if (stored !== null) {
+    window.__referralCountValue = stored;
+    return stored;
+  }
+
+  if (isLocked()) {
+    window.__referralCountPromise = waitForStoredCount().then((count) => {
+      window.__referralCountValue = count;
+      return count;
+    });
+    return window.__referralCountPromise;
+  }
+
+  setLock();
+
   window.__referralCountPromise = api.get<ReferralResponse>('/user/referrals')
     .then((response) => {
       window.__referralCountValue = toNumber(response.data?.data?.[0]?.total);
+      setStoredCount(window.__referralCountValue);
       return window.__referralCountValue;
     })
     .catch(() => {
       window.__referralCountValue = 0;
       return 0;
+    })
+    .finally(() => {
+      clearLock();
     });
 
   return window.__referralCountPromise;
