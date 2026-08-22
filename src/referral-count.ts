@@ -6,9 +6,13 @@ type ReferralResponse = {
   }>;
 };
 
-let cachedReferralCount: number | null = null;
-let loadingPromise: Promise<number> | null = null;
-let observer: MutationObserver | null = null;
+declare global {
+  interface Window {
+    __referralCountPromise?: Promise<number>;
+    __referralCountValue?: number;
+    __referralCountInitialized?: boolean;
+  }
+}
 
 const toNumber = (value: unknown): number => {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -19,21 +23,21 @@ const toNumber = (value: unknown): number => {
   return 0;
 };
 
-const loadReferralCount = async () => {
-  if (cachedReferralCount !== null) return cachedReferralCount;
-  if (loadingPromise) return loadingPromise;
+const loadReferralCountOnce = async () => {
+  if (typeof window.__referralCountValue === 'number') return window.__referralCountValue;
+  if (window.__referralCountPromise) return window.__referralCountPromise;
 
-  loadingPromise = api.get<ReferralResponse>('/user/referrals')
+  window.__referralCountPromise = api.get<ReferralResponse>('/user/referrals')
     .then((response) => {
-      cachedReferralCount = toNumber(response.data?.data?.[0]?.total);
-      return cachedReferralCount;
+      window.__referralCountValue = toNumber(response.data?.data?.[0]?.total);
+      return window.__referralCountValue;
     })
-    .catch(() => 0)
-    .finally(() => {
-      loadingPromise = null;
+    .catch(() => {
+      window.__referralCountValue = 0;
+      return 0;
     });
 
-  return loadingPromise;
+  return window.__referralCountPromise;
 };
 
 const findBonusContainer = () => {
@@ -60,35 +64,34 @@ const upsertReferralCount = (bonusContainer: HTMLElement, count: number) => {
   referralElement.textContent = `Приведено друзей: ${count}`;
 };
 
-const renderReferralCount = async () => {
-  const bonusContainer = findBonusContainer();
-  if (!bonusContainer) return false;
+const renderWhenReady = (count: number) => {
+  let attempts = 0;
+  const maxAttempts = 20;
 
-  const count = await loadReferralCount();
+  const tryRender = () => {
+    const bonusContainer = findBonusContainer();
 
-  if (!document.body.contains(bonusContainer)) return false;
-  upsertReferralCount(bonusContainer, count);
-  return true;
+    if (bonusContainer) {
+      upsertReferralCount(bonusContainer, count);
+      return;
+    }
+
+    attempts += 1;
+    if (attempts < maxAttempts) {
+      window.setTimeout(tryRender, 250);
+    }
+  };
+
+  tryRender();
 };
 
 export const initReferralCount = () => {
   if (typeof window === 'undefined') return;
+  if (window.__referralCountInitialized) return;
 
-  void renderReferralCount().then((rendered) => {
-    if (rendered) return;
+  window.__referralCountInitialized = true;
 
-    observer = new MutationObserver(() => {
-      void renderReferralCount().then((isRendered) => {
-        if (isRendered) {
-          observer?.disconnect();
-          observer = null;
-        }
-      });
-    });
-
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
+  void loadReferralCountOnce().then((count) => {
+    renderWhenReady(count);
   });
 };
