@@ -6,7 +6,9 @@ type ReferralResponse = {
   }>;
 };
 
+let cachedReferralCount: number | null = null;
 let loadingPromise: Promise<number> | null = null;
+let observer: MutationObserver | null = null;
 
 const toNumber = (value: unknown): number => {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -18,10 +20,14 @@ const toNumber = (value: unknown): number => {
 };
 
 const loadReferralCount = async () => {
+  if (cachedReferralCount !== null) return cachedReferralCount;
   if (loadingPromise) return loadingPromise;
 
   loadingPromise = api.get<ReferralResponse>('/user/referrals')
-    .then((response) => toNumber(response.data?.data?.[0]?.total))
+    .then((response) => {
+      cachedReferralCount = toNumber(response.data?.data?.[0]?.total);
+      return cachedReferralCount;
+    })
     .catch(() => 0)
     .finally(() => {
       loadingPromise = null;
@@ -56,29 +62,33 @@ const upsertReferralCount = (bonusContainer: HTMLElement, count: number) => {
 
 const renderReferralCount = async () => {
   const bonusContainer = findBonusContainer();
-  if (!bonusContainer) return;
+  if (!bonusContainer) return false;
 
   const count = await loadReferralCount();
 
-  if (!document.body.contains(bonusContainer)) return;
+  if (!document.body.contains(bonusContainer)) return false;
   upsertReferralCount(bonusContainer, count);
+  return true;
 };
 
 export const initReferralCount = () => {
   if (typeof window === 'undefined') return;
 
-  const observer = new MutationObserver(() => {
-    void renderReferralCount();
+  void renderReferralCount().then((rendered) => {
+    if (rendered) return;
+
+    observer = new MutationObserver(() => {
+      void renderReferralCount().then((isRendered) => {
+        if (isRendered) {
+          observer?.disconnect();
+          observer = null;
+        }
+      });
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
   });
-
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true,
-  });
-
-  setInterval(() => {
-    void renderReferralCount();
-  }, 1000);
-
-  void renderReferralCount();
 };
