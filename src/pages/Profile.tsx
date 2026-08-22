@@ -4,7 +4,7 @@ import { IconUser, IconPhone, IconCopy, IconCheck, IconBrandTelegram, IconCredit
 import { notifications } from '@mantine/notifications';
 import { useClipboard } from '@mantine/hooks';
 import { useTranslation } from 'react-i18next';
-import { userApi, telegramApi, userEmailApi } from '../api/client';
+import { userApi, telegramApi, userEmailApi, api } from '../api/client';
 import { encodePartnerIdBase64url } from '../api/cookie';
 import PayModal from '../components/PayModal';
 import PromoModal from '../components/PromoModal';
@@ -62,6 +62,33 @@ interface ForecastData {
   items: ForecastItem[];
 }
 
+interface ReferralResponse {
+  data?: Array<{
+    total?: number | string;
+  }>;
+}
+
+let referralCountPromise: Promise<number> | null = null;
+
+const toNumber = (value: unknown): number => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value.replace(',', '.'));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+};
+
+const loadReferralCount = async () => {
+  if (!referralCountPromise) {
+    referralCountPromise = api.get<ReferralResponse>('/user/referrals')
+      .then((response) => toNumber(response.data?.data?.[0]?.total))
+      .catch(() => 0);
+  }
+
+  return referralCountPromise;
+};
+
 export default function Profile() {
   const { telegramPhoto, userEmail: storeEmail, userEmailVerified: storeEmailVerified, setUserEmail, setUserEmailVerified, isEmailLoaded, setOpenEmailModal } = useStore();
   const emailBlocked = config.EMAIL_REQUIRED === 'true' && isEmailLoaded && !storeEmail;
@@ -80,6 +107,7 @@ export default function Profile() {
   const [emailSaving, setEmailSaving] = useState(false);
   const [profileEmail, setProfileEmail] = useState<string | null>(storeEmail);
   const [emailVerified, setEmailVerified] = useState<number>(storeEmailVerified || 0);
+  const [referralCount, setReferralCount] = useState<number>(0);
 
   useEffect(() => {
     setProfileEmail(storeEmail);
@@ -135,11 +163,14 @@ export default function Profile() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchProfile = async () => {
       try {
         const response = await userApi.getProfile();
         const responseData = response.data.data;
         const data = Array.isArray(responseData) ? responseData[0] : responseData;
+        if (cancelled) return;
         setProfile(data);
         setFormData({
           full_name: data.full_name || '',
@@ -149,16 +180,29 @@ export default function Profile() {
         try {
           const forecastResponse = await userApi.getForecast();
           const forecastData = forecastResponse.data.data;
-          if (Array.isArray(forecastData) && forecastData.length > 0) {
+          if (!cancelled && Array.isArray(forecastData) && forecastData.length > 0) {
             setForecast(forecastData[0]);
           }
         } catch {
         }
+        try {
+          const referrals = await loadReferralCount();
+          if (!cancelled) {
+            setReferralCount(referrals);
+          }
+        } catch {
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
     fetchProfile();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -567,6 +611,7 @@ export default function Profile() {
             <Group justify="space-between" align="center">
               <div>
                   <Text size="xm" c="dimmed">{t('profile.bonus')}: {profile.bonus}</Text>
+                  <Text size="xm" c="dimmed" mt={4}>Приведено друзей: {referralCount}</Text>
               </div>
               <Button onClick={() => emailBlocked ? setOpenEmailModal(true) : setPromoModalOpen(true)} color="cyan">
                 {t('profile.enterPromo')}
