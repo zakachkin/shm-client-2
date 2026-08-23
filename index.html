@@ -18,12 +18,36 @@
         const reloadKey = 'shm_boot_reload_count';
         const maxReloads = 10;
         const bootTimeoutMs = 7000;
+        const logPrefix = '[SHM boot]';
+
+        const log = (...args) => console.log(logPrefix, ...args);
+        const warn = (...args) => console.warn(logPrefix, ...args);
+
+        let initialReloads = 0;
+        try {
+          initialReloads = Number(sessionStorage.getItem(reloadKey) || '0');
+        } catch (_) {
+        }
+
+        log('boot guard started', {
+          attempt: initialReloads + 1,
+          maxReloads: maxReloads + 1,
+          bootTimeoutMs,
+          href: window.location.href,
+          userAgent: navigator.userAgent,
+        });
 
         window.__shmAppBootLoaded = false;
         window.__shmAppBootOk = () => {
           window.__shmAppBootLoaded = true;
+          log('app boot success', {
+            completedAttempt: initialReloads + 1,
+            href: window.location.href,
+          });
+
           try {
             sessionStorage.removeItem(reloadKey);
+            log('reload counter reset');
           } catch (_) {
           }
 
@@ -32,27 +56,50 @@
             if (url.searchParams.has('_shm_reload')) {
               url.searchParams.delete('_shm_reload');
               window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+              log('removed _shm_reload from url');
             }
           } catch (_) {
           }
         };
 
-        const reloadOnce = () => {
-          if (window.__shmAppBootLoaded) return;
+        const reloadOnce = (reason, details) => {
+          if (window.__shmAppBootLoaded) {
+            log('reload skipped because app already booted', { reason, details });
+            return;
+          }
 
           let currentReloads = 0;
           try {
             currentReloads = Number(sessionStorage.getItem(reloadKey) || '0');
-            if (currentReloads >= maxReloads) return;
+            if (currentReloads >= maxReloads) {
+              warn('reload limit reached, stop reloading', {
+                reason,
+                details,
+                currentReloads,
+                maxReloads,
+              });
+              return;
+            }
             sessionStorage.setItem(reloadKey, String(currentReloads + 1));
           } catch (_) {
           }
 
+          const nextAttempt = currentReloads + 2;
+          warn('reload attempt scheduled', {
+            reason,
+            details,
+            reloadNumber: currentReloads + 1,
+            nextAttempt,
+            maxAttempts: maxReloads + 1,
+          });
+
           try {
             const url = new URL(window.location.href);
             url.searchParams.set('_shm_reload', String(Date.now()));
+            warn('reloading with cache-buster', url.toString());
             window.location.replace(url.toString());
-          } catch (_) {
+          } catch (error) {
+            warn('reloading with window.location.reload fallback', error);
             window.location.reload();
           }
         };
@@ -60,20 +107,30 @@
         window.addEventListener('error', (event) => {
           const target = event.target;
           if (target && (target.tagName === 'SCRIPT' || target.tagName === 'LINK')) {
-            reloadOnce();
+            reloadOnce('asset load error', {
+              tagName: target.tagName,
+              src: target.src || target.href || null,
+            });
           }
         }, true);
 
         window.addEventListener('unhandledrejection', (event) => {
           const message = String(event.reason?.message || event.reason || '');
           if (/Loading chunk|dynamically imported module|Importing a module script failed|Failed to fetch dynamically imported module|module script/i.test(message)) {
-            reloadOnce();
+            reloadOnce('module/chunk load error', {
+              message,
+            });
           }
         });
 
         window.setTimeout(() => {
           if (!window.__shmAppBootLoaded) {
-            reloadOnce();
+            reloadOnce('boot timeout', {
+              timeoutMs: bootTimeoutMs,
+              rootHasContent: Boolean(document.getElementById('root')?.childElementCount),
+            });
+          } else {
+            log('boot timeout check passed, app already booted');
           }
         }, bootTimeoutMs);
       })();
