@@ -17,3 +17,5 @@ createRoot(document.getElementById('root')!).render(
     </Suspense>
   </StrictMode>,
 )
+
+;(window as Window & { __shmAppBootOk?: () => void }).__shmAppBootOk?.()
