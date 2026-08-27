@@ -54,7 +54,7 @@
       }
 
       #shm-boot-details {
-        margin: 0;
+        margin: 0 0 12px;
         padding: 12px;
         max-height: 220px;
         overflow: auto;
@@ -66,11 +66,20 @@
         font-size: 12px;
         line-height: 1.4;
       }
+
+      #shm-boot-reload {
+        width: 100%;
+        height: 40px;
+        border: 0;
+        border-radius: 10px;
+        background: #06b6d4;
+        color: white;
+        font-size: 14px;
+        font-weight: 600;
+      }
     </style>
     <script>
       (() => {
-        const reloadKey = 'shm_boot_reload_count';
-        const maxReloads = 10;
         const bootTimeoutMs = 7000;
         const logPrefix = '[SHM boot]';
         const startedAt = Date.now();
@@ -80,14 +89,6 @@
 
         let lastReason = 'initial boot';
         let lastDetails = null;
-
-        const readReloads = () => {
-          try {
-            return Number(sessionStorage.getItem(reloadKey) || '0');
-          } catch (_) {
-            return 0;
-          }
-        };
 
         const writeBootScreen = (title, text, details) => {
           const screen = document.getElementById('shm-boot-screen');
@@ -104,15 +105,12 @@
         };
 
         const showBootScreen = (reason, details) => {
-          const currentReloads = readReloads();
           writeBootScreen(
             'Загрузка личного кабинета',
-            'Если Safari получил битый кэш или старый JS-файл, страница попробует перезагрузиться автоматически.',
+            'Автоперезагрузка отключена, чтобы Safari не уходил в ошибку. Ниже данные диагностики.',
             {
               reason,
               details,
-              attempt: currentReloads + 1,
-              maxAttempts: maxReloads + 1,
               secondsFromStart: Math.round((Date.now() - startedAt) / 1000),
               href: window.location.href,
               userAgent: navigator.userAgent,
@@ -127,107 +125,53 @@
           }
         };
 
-        let initialReloads = readReloads();
-
-        log('boot guard started', {
-          attempt: initialReloads + 1,
-          maxAttempts: maxReloads + 1,
-          bootTimeoutMs,
-          href: window.location.href,
-          userAgent: navigator.userAgent,
-        });
-
         window.__shmAppBootLoaded = false;
+        window.__shmManualReload = () => {
+          try {
+            const url = new URL(window.location.href);
+            url.searchParams.set('_shm_manual_reload', String(Date.now()));
+            window.location.replace(url.toString());
+          } catch (_) {
+            window.location.reload();
+          }
+        };
+
         window.__shmAppBootOk = () => {
           window.__shmAppBootLoaded = true;
           log('app boot success', {
-            completedAttempt: readReloads() + 1,
             href: window.location.href,
           });
 
           hideBootScreen();
 
           try {
-            sessionStorage.removeItem(reloadKey);
-            log('reload counter reset');
-          } catch (_) {
-          }
-
-          try {
             const url = new URL(window.location.href);
-            if (url.searchParams.has('_shm_reload')) {
+            if (url.searchParams.has('_shm_manual_reload') || url.searchParams.has('_shm_reload')) {
+              url.searchParams.delete('_shm_manual_reload');
               url.searchParams.delete('_shm_reload');
               window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
-              log('removed _shm_reload from url');
+              log('removed boot reload params from url');
             }
           } catch (_) {
           }
         };
 
-        const reloadOnce = (reason, details) => {
-          lastReason = reason;
-          lastDetails = details;
-          showBootScreen(reason, details);
-
-          if (window.__shmAppBootLoaded) {
-            log('reload skipped because app already booted', { reason, details });
-            return;
-          }
-
-          let currentReloads = readReloads();
-          try {
-            if (currentReloads >= maxReloads) {
-              warn('reload limit reached, stop reloading', {
-                reason,
-                details,
-                currentReloads,
-                maxReloads,
-              });
-              writeBootScreen(
-                'Не удалось загрузить кабинет',
-                'Автоматические попытки закончились. Откройте страницу заново или очистите данные сайта Safari.',
-                {
-                  reason,
-                  details,
-                  attemptsDone: currentReloads,
-                  maxReloads,
-                  href: window.location.href,
-                  userAgent: navigator.userAgent,
-                },
-              );
-              return;
-            }
-            sessionStorage.setItem(reloadKey, String(currentReloads + 1));
-          } catch (_) {
-          }
-
-          const nextAttempt = currentReloads + 2;
-          warn('reload attempt scheduled', {
-            reason,
-            details,
-            reloadNumber: currentReloads + 1,
-            nextAttempt,
-            maxAttempts: maxReloads + 1,
-          });
-
-          try {
-            const url = new URL(window.location.href);
-            url.searchParams.set('_shm_reload', String(Date.now()));
-            warn('reloading with cache-buster', url.toString());
-            window.setTimeout(() => window.location.replace(url.toString()), 350);
-          } catch (error) {
-            warn('reloading with window.location.reload fallback', error);
-            window.setTimeout(() => window.location.reload(), 350);
-          }
-        };
+        log('boot guard started without auto reload', {
+          bootTimeoutMs,
+          href: window.location.href,
+          userAgent: navigator.userAgent,
+        });
 
         window.addEventListener('error', (event) => {
           const target = event.target;
           if (target && (target.tagName === 'SCRIPT' || target.tagName === 'LINK')) {
-            reloadOnce('asset load error', {
+            lastReason = 'asset load error';
+            lastDetails = {
               tagName: target.tagName,
               src: target.src || target.href || null,
-            });
+            };
+            warn('asset load error captured', lastDetails);
+            showBootScreen(lastReason, lastDetails);
             return;
           }
 
@@ -247,20 +191,12 @@
           lastReason = 'unhandled promise rejection';
           lastDetails = { message };
           warn('unhandled promise rejection captured', lastDetails);
-
-          if (/Loading chunk|dynamically imported module|Importing a module script failed|Failed to fetch dynamically imported module|module script/i.test(message)) {
-            reloadOnce('module/chunk load error', {
-              message,
-            });
-            return;
-          }
-
           showBootScreen(lastReason, lastDetails);
         });
 
         window.setTimeout(() => {
           if (!window.__shmAppBootLoaded) {
-            reloadOnce('boot timeout', {
+            showBootScreen('boot timeout', {
               timeoutMs: bootTimeoutMs,
               rootHasContent: Boolean(document.getElementById('root')?.childElementCount),
               lastReason,
@@ -290,9 +226,10 @@
         <h1 id="shm-boot-title">Загрузка личного кабинета</h1>
         <p id="shm-boot-text">Проверяем запуск приложения…</p>
         <pre id="shm-boot-details">{
-  "version": "boot-screen-visible-by-default",
-  "hint": "Если вы видите этот блок, свежий index.html дошёл до браузера."
+  "version": "manual-diagnostics-no-auto-reload",
+  "hint": "Если этот блок не исчезает, основной JS не стартовал или приложение упало."
 }</pre>
+        <button id="shm-boot-reload" type="button" onclick="window.__shmManualReload && window.__shmManualReload()">Обновить страницу</button>
       </div>
     </div>
     <div id="root"></div>
