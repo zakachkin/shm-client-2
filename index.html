@@ -2,6 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>SHM Client</title>
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
@@ -77,7 +80,6 @@
 
         let lastReason = 'initial boot';
         let lastDetails = null;
-        let visibleTimer = null;
 
         const readReloads = () => {
           try {
@@ -143,9 +145,6 @@
             href: window.location.href,
           });
 
-          if (visibleTimer) {
-            window.clearTimeout(visibleTimer);
-          }
           hideBootScreen();
 
           try {
@@ -259,14 +258,6 @@
           showBootScreen(lastReason, lastDetails);
         });
 
-        document.addEventListener('DOMContentLoaded', () => {
-          visibleTimer = window.setTimeout(() => {
-            if (!window.__shmAppBootLoaded) {
-              showBootScreen(lastReason, lastDetails);
-            }
-          }, 1200);
-        });
-
         window.setTimeout(() => {
           if (!window.__shmAppBootLoaded) {
             reloadOnce('boot timeout', {
@@ -294,11 +285,14 @@
     <script src="config.js"></script>
   </head>
   <body>
-    <div id="shm-boot-screen" style="display: none;">
+    <div id="shm-boot-screen">
       <div id="shm-boot-card">
         <h1 id="shm-boot-title">Загрузка личного кабинета</h1>
         <p id="shm-boot-text">Проверяем запуск приложения…</p>
-        <pre id="shm-boot-details">{}</pre>
+        <pre id="shm-boot-details">{
+  "version": "boot-screen-visible-by-default",
+  "hint": "Если вы видите этот блок, свежий index.html дошёл до браузера."
+}</pre>
       </div>
     </div>
     <div id="root"></div>
