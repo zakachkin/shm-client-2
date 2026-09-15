@@ -19,6 +19,19 @@ function isPdf(value: string) {
   return value.toLowerCase().endsWith('.pdf');
 }
 
+function generatePassword(length = 10) {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
+  const cryptoObject = window.crypto;
+
+  if (cryptoObject?.getRandomValues) {
+    const values = new Uint32Array(length);
+    cryptoObject.getRandomValues(values);
+    return Array.from(values, (value) => chars[value % chars.length]).join('');
+  }
+
+  return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
+
 function base64UrlToArrayBuffer(base64url: string): ArrayBuffer {
   const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
   const padding = '='.repeat((4 - (base64.length % 4)) % 4);
@@ -195,6 +208,12 @@ export default function Login() {
 
     checkResetToken();
   }, []);
+
+  const handleGeneratePassword = () => {
+    const password = generatePassword(10);
+    form.setValues({ password, confirmPassword: password });
+    form.clearErrors();
+  };
 
   const handleNewPasswordSubmit = async () => {
     if (!newPasswordData.password || !newPasswordData.confirmPassword) {
@@ -620,6 +639,17 @@ export default function Login() {
                     name="password"
                     {...form.getInputProps('password')}
                   />
+                  {mode === 'register' && (
+                    <Button
+                      type="button"
+                      variant="light"
+                      size="xs"
+                      fullWidth
+                      onClick={handleGeneratePassword}
+                    >
+                      Сгенерировать пароль
+                    </Button>
+                  )}
                   {mode === 'register' && (
                     <PasswordInput
                       label={t('auth.confirmPasswordLabel')}
