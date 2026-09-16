@@ -226,10 +226,15 @@ export const ticketApi = {
 };
 
 export const userEmailApi = {
-  getEmail: () => api.get<{ data: { email: string, email_verified: number } }>('/user/email'),
+  getEmail: () => api.get<{ data: { email: string, email_verified: number } | Array<{ email: string, email_verified: number }> }>('/user/email'),
   setEmail: (email: string) => api.put('/user/email', { email: email }),
   sendVerifyCode: (email: string) => api.post('/user/email', { email: email }),
-  confirmEmail: (code: string) => api.post('/user/email', { code: code }),
+  confirmEmail: async (code: string) => {
+    const emailResponse = await api.get<{ data: { email: string } | Array<{ email: string }> }>('/user/email');
+    const raw = emailResponse.data?.data;
+    const email = Array.isArray(raw) ? raw[0]?.email : raw?.email;
+    return api.post('/user/email', { email, code: code.trim() });
+  },
   deleteEmail: () => api.delete('/user/email'),
 };
 
