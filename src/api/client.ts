@@ -225,15 +225,38 @@ export const ticketApi = {
     api.get<Blob>(`/user/ticket/media/${id}`, { responseType: 'blob' }),
 };
 
+const EMAIL_VERIFY_STORAGE_KEY = 'shm_email_verify_address';
+
+const saveEmailForVerification = (email: string) => {
+  try {
+    sessionStorage.setItem(EMAIL_VERIFY_STORAGE_KEY, email.trim());
+  } catch {
+  }
+};
+
+const getEmailForVerification = () => {
+  try {
+    return sessionStorage.getItem(EMAIL_VERIFY_STORAGE_KEY) || '';
+  } catch {
+    return '';
+  }
+};
+
 export const userEmailApi = {
   getEmail: () => api.get<{ data: { email: string, email_verified: number } | Array<{ email: string, email_verified: number }> }>('/user/email'),
-  setEmail: (email: string) => api.put('/user/email', { email: email }),
-  sendVerifyCode: (email: string) => api.post('/user/email', { email: email }),
-  confirmEmail: async (code: string) => {
-    const emailResponse = await api.get<{ data: { email: string } | Array<{ email: string }> }>('/user/email');
-    const raw = emailResponse.data?.data;
-    const email = Array.isArray(raw) ? raw[0]?.email : raw?.email;
-    return api.post('/user/email', { email, code: code.trim() });
+  setEmail: (email: string) => {
+    const trimmedEmail = email.trim();
+    saveEmailForVerification(trimmedEmail);
+    return api.put('/user/email', { email: trimmedEmail });
+  },
+  sendVerifyCode: (email: string) => {
+    const trimmedEmail = email.trim();
+    saveEmailForVerification(trimmedEmail);
+    return api.post('/user/email', { email: trimmedEmail });
+  },
+  confirmEmail: (code: string, email?: string) => {
+    const trimmedEmail = (email || getEmailForVerification()).trim();
+    return api.post('/user/email', { email: trimmedEmail, code: code.trim() });
   },
   deleteEmail: () => api.delete('/user/email'),
 };
